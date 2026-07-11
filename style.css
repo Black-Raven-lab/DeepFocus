@@ -1,0 +1,2481 @@
+/* ===================================================
+   CSS VARIABLES & ROOT CONFIGURATION
+   =================================================== */
+
+:root {
+  /* Primary Colors */
+  --bg-primary: #0f1022;
+  /* Adaptive accent system — updated live by WallpaperManager
+     when a built-in wallpaper defines its own accent color */
+  --accent-color: #a855f7;
+  --accent-hover: #c084fc;
+  --accent-dark: #9333ea;
+  --accent-glow: var(--accent-glow); /* interactive glows */
+  --accent-glow-strong: var(--accent-glow-strong); /* thumbs, emphasis */
+  --accent-soft: rgba(168, 85, 247, 0.13); /* subtle bgs, focus rings */
+  --accent-ambient: rgba(168, 85, 247, 0.08); /* scene mood tint */
+  /* Legacy alias — every existing rule keeps working */
+  --accent-primary: var(--accent-color);
+
+  /* Component Colors */
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.15);
+  --card-border-hover: rgba(255, 255, 255, 0.25);
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+
+  /* Effects */
+  --shadow-lg: 0 25px 60px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --blur-md: 20px;
+
+  /* Fonts */
+  --font-display: "Playfair Display", serif;
+  --font-sans: "Poppins", sans-serif;
+
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout (shared by floating cards for responsive alignment) */
+  --task-panel-width: 380px;
+  --player-height: 21rem;
+
+  /* Live wallpaper (driven by WallpaperManager) */
+  --wallpaper-brightness: 1;
+  --wallpaper-overlay: 0.2;
+  --wallpaper-blur: 0px;
+}
+
+/* ===================================================
+   GLOBAL STYLES
+   =================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+body {
+  /* Live-wallpaper-only: the <video> is the real background. This is
+     just the base paint beneath it, so the app is never blank. */
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Live wallpaper layer: fixed, behind everything, inert ---- */
+.wallpaper-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -2; /* the real application background */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wallpaper-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* fills viewport, keeps aspect — no bars/stretch */
+  pointer-events: none;
+  filter: brightness(var(--wallpaper-brightness));
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  /* promote to its own compositor layer for hardware decoding */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.wallpaper-layer.active .wallpaper-video {
+  opacity: 1;
+}
+
+/* Fade-out phase while the source is being swapped */
+.wallpaper-layer.switching .wallpaper-video {
+  opacity: 0;
+}
+
+/* Adjustable dark overlay (readability) — sits above the wallpaper */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, var(--wallpaper-overlay));
+  pointer-events: none;
+  z-index: -1; /* above the video, below all UI */
+}
+
+/* Optional blur layer — only composited when blur > 0 (perf) */
+body.wallpaper-blur-on::before {
+  backdrop-filter: blur(var(--wallpaper-blur));
+  -webkit-backdrop-filter: blur(var(--wallpaper-blur));
+}
+
+/* Gradient Overlay */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--accent-ambient) 0%,
+    rgba(15, 16, 34, 0.3) 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+main {
+  position: relative;
+  z-index: 2;
+}
+
+/* ===================================================
+   NAVBAR STYLES
+   =================================================== */
+
+.navbar {
+  width: 100%;
+}
+
+.navbar-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.65rem clamp(1rem, 3vw, 2.8rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Logo Section */
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: spin 20s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: var(--font-display);
+}
+
+.logo-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Quote Section */
+.quote-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.quote-section i {
+  color: var(--accent-primary);
+  opacity: 0.6;
+}
+
+.quote-line {
+  line-height: 1.3;
+}
+
+/* ===================================================
+   MAIN CONTAINER
+   =================================================== */
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  max-width: 550px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 1.5rem;
+}
+
+/* ===================================================
+   SESSION TABS
+   =================================================== */
+
+.session-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 50px;
+  padding: 0.4rem;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  color: var(--text-primary);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* ===================================================
+   TIMER CARD
+   =================================================== */
+
+.timer-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 2rem;
+  width: 100%;
+  max-width: min(460px, 100%);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.8s ease-out;
+  transition: var(--transition);
+  margin-bottom: 100px;
+
+  /* Fixed ~350px on desktop, clamped against the viewport so the
+     card never clips on short screens (desktop doesn't scroll) */
+  height: clamp(300px, calc(100vh - 340px), 350px);
+  padding: clamp(1.5rem, 3vh, 2.25rem) clamp(1.5rem, 3.5vw, 2.5rem);
+
+  /* Flex-driven vertical rhythm: children carry no positioning margins;
+     space-evenly distributes the extra height, gap sets the floor */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: stretch;
+  gap: clamp(0.85rem, 2vh, 1.4rem);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timer-card:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.timer-label {
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin: 0;
+}
+
+.timer-label::before,
+.timer-label::after {
+  content: "•";
+  margin: 0 0.5rem;
+  color: var(--accent-primary);
+}
+
+/* Timer Display */
+.timer-display {
+  font-size: clamp(3rem, 3vw + 1.5rem, 5rem);
+  font-weight: 700;
+  text-align: center;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.1em;
+  margin: 0;
+  background: linear-gradient(
+    135deg,
+    var(--text-primary),
+    var(--text-secondary)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: glassGlow 0.8s ease-out;
+}
+
+@keyframes glassGlow {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Progress Indicators */
+.progress-indicators {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 0;
+  width: 100%;
+  padding: 0 clamp(0rem, 2vw, 0.75rem);
+}
+
+.progress-bar-item {
+  flex: 1;
+  height: 3px;
+  background: var(--card-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.5s linear;
+}
+
+@keyframes slideRight {
+  from {
+    width: 0;
+  }
+}
+
+/* Timer Controls */
+.timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 0;
+}
+
+/* Larger controls to match the taller card — scoped to the timer card
+   so modal and task buttons keep their existing sizes */
+.timer-card .btn-start {
+  padding: clamp(0.7rem, 1.5vh, 0.85rem) clamp(1.5rem, 3vw, 1.9rem);
+  font-size: clamp(0.9rem, 0.8rem + 0.3vw, 1rem);
+}
+
+.timer-card .btn-icon {
+  width: clamp(2.5rem, 2.2rem + 0.6vw, 2.85rem);
+  height: clamp(2.5rem, 2.2rem + 0.6vw, 2.85rem);
+  font-size: 1rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  color: var(--text-primary);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px var(--accent-glow);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* ===================================================
+   FLOATING CARDS
+   =================================================== */
+
+/* Discord Card — stacked above the music player on the left rail */
+.discord-card {
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.discord-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: translateY(-5px);
+}
+
+.discord-card i:first-child {
+  font-size: 1.8rem;
+  color: var(--accent-primary);
+}
+
+.discord-text {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.discord-card i:last-child {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.discord-card:hover i:last-child {
+  transform: translateX(3px);
+}
+
+/* ===================================================
+   MUSIC PLAYER (premium glass card)
+   =================================================== */
+
+.music-player {
+  --player-width: 250px;
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  width: var(--player-width);
+  /* Fixed height, matched exactly with the task panel so their top
+     and bottom edges align — content distributes, never resizes it */
+  height: min(420px, calc(100vh - 9rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+  animation: slideInUp 0.8s ease-out 0.3s both;
+  transition: var(--transition);
+  z-index: 90;
+}
+
+.music-player:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.player-main {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition: opacity 0.3s ease;
+}
+
+/* ---- Header: icon, title, song count, live equalizer ---- */
+.player-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.player-header-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  background: var(--accent-soft);
+  color: var(--accent-color);
+  font-size: 0.85rem;
+}
+
+.player-header-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.player-header-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.player-header-count {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+/* Collapse chevron — mobile-only affordance, hidden on desktop */
+.player-collapse-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition:
+    transform 0.25s ease,
+    color 0.2s ease;
+}
+
+.music-player.collapsed .player-collapse-btn i {
+  transform: rotate(180deg);
+}
+
+/* Equalizer bars — animate only while music plays */
+.player-equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+  flex: none;
+}
+
+.player-equalizer span {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent-color);
+  height: 30%;
+  opacity: 0.35;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease;
+}
+
+.music-player.playing .player-equalizer span {
+  opacity: 1;
+  animation: eq-bounce 1s ease-in-out infinite;
+}
+
+.music-player.playing .player-equalizer span:nth-child(1) {
+  animation-duration: 0.9s;
+}
+.music-player.playing .player-equalizer span:nth-child(2) {
+  animation-duration: 0.7s;
+  animation-delay: 0.1s;
+}
+.music-player.playing .player-equalizer span:nth-child(3) {
+  animation-duration: 1.1s;
+  animation-delay: 0.2s;
+}
+.music-player.playing .player-equalizer span:nth-child(4) {
+  animation-duration: 0.8s;
+  animation-delay: 0.05s;
+}
+
+@keyframes eq-bounce {
+  0%,
+  100% {
+    height: 30%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+/* ---- Playlist: the largest section, and the only one that scrolls ---- */
+.player-playlist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.15rem -0.35rem 0.15rem 0;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
+}
+
+.player-playlist::-webkit-scrollbar {
+  width: 4px;
+}
+
+.player-playlist::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
+
+.playlist-item {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(3px);
+  filter: brightness(1.12);
+}
+
+/* Active song: accent, glass highlight, subtle glow */
+.playlist-item.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-glow);
+  color: var(--text-primary);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.playlist-item-icon {
+  width: 1.1rem;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+.playlist-item.active .playlist-item-icon {
+  color: var(--accent-color);
+}
+
+/* Active row swaps the note for mini equalizer bars */
+.playlist-item .mini-eq {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.playlist-item .mini-eq i {
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent-color);
+  height: 35%;
+}
+
+.playlist-item.active .icon-note {
+  display: none;
+}
+
+.playlist-item.active .mini-eq {
+  display: flex;
+}
+
+.music-player.playing .playlist-item.active .mini-eq i {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.music-player.playing .playlist-item.active .mini-eq i:nth-child(2) {
+  animation-duration: 0.65s;
+  animation-delay: 0.1s;
+}
+
+.music-player.playing .playlist-item.active .mini-eq i:nth-child(3) {
+  animation-duration: 1.05s;
+  animation-delay: 0.18s;
+}
+
+.playlist-item-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.playlist-item-title {
+  font-size: 0.76rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.playlist-item.active .playlist-item-title {
+  color: var(--accent-color);
+}
+
+.playlist-item-artist {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Now Playing: compact ---- */
+.now-playing {
+  min-width: 0;
+}
+
+.now-playing-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 0.15rem;
+}
+
+/* Fade whole card body while switching tracks */
+.music-player.switching .player-main {
+  opacity: 0.25;
+}
+
+.song-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-artist {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  margin-top: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Progress row: time — slider — time */
+.player-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-time {
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  min-width: 2.1em;
+  text-align: center;
+}
+
+/* ---- Streaming-style seek bar: track + fill + hover thumb ---- */
+.progress-track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--card-border);
+  cursor: pointer;
+  touch-action: none; /* dragging is handled via pointer events */
+  transition: height 0.2s ease;
+}
+
+/* Invisible enlarged hit area so it's easy to grab on any device */
+.progress-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  bottom: -10px;
+}
+
+.progress-track:hover,
+.progress-track.seeking {
+  height: 6px;
+}
+
+.progress-track:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 6px;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--accent-dark),
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  box-shadow: 0 0 8px var(--accent-glow);
+  /* Glides between ~250ms timeupdate ticks — no stepping, no flicker */
+  transition: width 0.25s linear;
+}
+
+/* While dragging, the fill must track the pointer 1:1 */
+.progress-track.seeking .progress-fill {
+  transition: none;
+}
+
+.progress-thumb {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-glow-strong);
+  transform: translate(50%, -50%) scale(0);
+  transition: transform 0.15s ease;
+  pointer-events: none; /* the track handles all input */
+}
+
+.progress-track:hover .progress-thumb,
+.progress-track.seeking .progress-thumb,
+.progress-track:focus-visible .progress-thumb {
+  transform: translate(50%, -50%) scale(1);
+}
+
+/* Transport controls */
+.player-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.player-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+  padding: 0.45rem;
+  border-radius: 0.65rem;
+  line-height: 1;
+  position: relative;
+}
+
+.player-btn:hover {
+  color: var(--accent-color);
+  background: var(--accent-soft);
+  border-color: var(--accent-glow);
+  transform: translateY(-1px) scale(1.06);
+}
+
+.player-btn:active {
+  transform: scale(0.95);
+}
+
+.player-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Main play/pause: filled circular button */
+.player-btn-play {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  color: var(--text-primary);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.player-btn-play:hover {
+  color: var(--text-primary);
+  background: linear-gradient(
+    135deg,
+    var(--accent-hover),
+    var(--accent-primary)
+  );
+  transform: scale(1.1);
+}
+
+/* Shuffle / repeat active states */
+.player-btn.active {
+  color: var(--accent-primary);
+  background: var(--accent-soft);
+}
+
+.player-btn.active::before {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+/* "Repeat one" badge */
+.player-btn.repeat-one::after {
+  content: "1";
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--accent-primary);
+  border-radius: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Volume row */
+.player-volume {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-volume .slider {
+  flex: 1;
+}
+
+/* Sliders (progress + volume) — filled track driven by --fill */
+.slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary) var(--fill, 0%),
+    var(--card-border) var(--fill, 0%)
+  );
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: height 0.2s ease;
+}
+
+.slider:hover {
+  height: 6px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--accent-primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--accent-glow-strong);
+  transition: transform 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--accent-primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--accent-glow-strong);
+}
+
+/* Empty state */
+.player-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+}
+
+.player-empty[hidden] {
+  display: none;
+}
+
+.player-empty i {
+  font-size: 1.6rem;
+  color: var(--accent-primary);
+  opacity: 0.7;
+}
+
+.player-empty p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.player-empty span {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+/* Center Message */
+.center-message {
+  position: fixed;
+  bottom: 2rem;
+
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: min(90vw, 420px);
+  white-space: nowrap;
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 3rem;
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  animation: slideInUp 0.8s ease-out 0.4s both;
+}
+
+.center-message i {
+  color: var(--accent-primary);
+}
+
+/* Bottom Quote — sits beside the task panel, not behind it */
+.bottom-quote {
+  position: fixed;
+  bottom: 2rem;
+  right: calc(2rem + var(--task-panel-width, 380px) + 1.5rem);
+  max-width: 200px;
+  text-align: right;
+  z-index: 80;
+}
+
+.quote-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-family: var(--font-display);
+  animation: slideInUp 0.8s ease-out 0.5s both;
+}
+
+/* ===================================================
+   SETTINGS MODAL
+   =================================================== */
+
+.modal-content {
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--card-border);
+  padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.settings-group {
+  margin-bottom: 1.5rem;
+}
+
+.settings-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.settings-label i {
+  color: var(--accent-primary);
+}
+
+.form-control {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+}
+
+.form-control:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem var(--accent-soft);
+}
+
+.form-check-input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.form-check-label {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+/* ---- Wallpaper settings UI ---- */
+.settings-divider {
+  border: none;
+  border-top: 1px solid var(--card-border);
+  margin: 1.5rem 0;
+  opacity: 1;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  font-family: var(--font-display);
+}
+
+.settings-section-title i {
+  color: var(--accent-primary);
+}
+
+.form-select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+}
+
+.form-select:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem var(--accent-soft);
+}
+
+.form-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.settings-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.settings-value {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--card-border);
+  padding: 1.5rem;
+}
+
+.btn-secondary {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+/* ===================================================
+   TASK PANEL STYLES
+   =================================================== */
+
+.task-panel {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: var(--task-panel-width, 380px);
+  height: min(420px, calc(100vh - 9rem));
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: slideInUp 0.5s ease-out 0.6s both;
+  z-index: 100;
+  transition: var(--transition);
+}
+
+.task-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--card-border);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Collapsed: only the header bar remains visible (used as the grab bar
+   of the mobile bottom sheet, and as a minimize toggle on desktop) */
+.task-panel.collapsed .task-panel-content {
+  display: none;
+}
+
+.task-panel.collapsed {
+  height: auto;
+}
+
+.task-panel.collapsed .task-panel-header {
+  border-bottom: none;
+}
+
+.task-panel.collapsed .task-panel-close i {
+  transform: rotate(180deg);
+}
+
+/* The Discord card markup is an empty placeholder — don't let it
+   create a phantom gap in the mobile flow */
+.discord-card:empty {
+  display: none; /* empty placeholder must not add a phantom flex gap */
+}
+
+.task-panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-primary);
+}
+
+.task-panel-title i {
+  color: var(--accent-primary);
+}
+
+.task-panel-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.task-panel-close:hover {
+  color: var(--accent-primary);
+  transform: rotate(180deg);
+}
+
+.task-panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden; /* the list scrolls, not the panel */
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Task Progress */
+.task-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--card-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  width: 0%;
+  transition: width 0.3s ease-out;
+  border-radius: 3px;
+}
+
+.task-progress-text {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* Task Input */
+.task-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-input {
+  flex: 1;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding-left: 12px;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  transition: var(--transition);
+}
+
+.task-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.task-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1);
+}
+
+.task-add-btn {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-hover)
+  );
+  border: none;
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.task-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px var(--accent-glow);
+}
+
+/* Task List */
+.task-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.task-list:empty::after {
+  content: "No tasks yet. Start by adding one!";
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  margin: auto;
+}
+
+.task-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  border-radius: 0.6rem;
+  padding: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: var(--transition);
+  cursor: grab;
+  border-left: 3px solid transparent;
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+.task-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--card-border-hover);
+}
+
+.task-card.dragging {
+  opacity: 0.5;
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.task-card.drag-over {
+  border-top: 2px solid var(--accent-primary);
+}
+
+.task-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.task-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.task-title {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+  transition: var(--transition);
+}
+
+.task-card.completed .task-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.task-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.task-delete-btn:hover {
+  color: #ff6b6b;
+  transform: scale(1.1);
+}
+
+/* Task Panel Footer */
+.task-panel-footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.task-footer-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.task-footer-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.task-footer-btn-danger:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* ===================================================
+   SESSION COMPLETE MODAL
+   =================================================== */
+
+.session-complete-modal {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.session-complete-modal .modal-content {
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--card-border);
+  border-radius: 2rem;
+}
+
+.session-complete-header {
+  text-align: center;
+  padding: 2rem 2rem 1rem;
+  animation: bounce 0.6s ease-out;
+}
+
+.session-star {
+  font-size: 3rem;
+  color: var(--accent-primary);
+  display: inline-block;
+}
+
+.session-complete-body {
+  padding: 0 2rem 2rem;
+  text-align: center;
+}
+
+.session-complete-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.8rem;
+  font-family: var(--font-display);
+}
+
+.session-complete-message {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.session-complete-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.session-complete-actions .btn {
+  flex: 1;
+}
+
+@keyframes bounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Confetti Animation */
+.confetti {
+  position: fixed;
+  pointer-events: none;
+  animation: confettiFall 2.5s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  to {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN
+   Desktop 1400px+  : floating three-column (player | timer | tasks)
+   Laptop 1024-1399 : same layout, reduced sizes and gaps
+   Tablet 768-1023  : timer on top, player + tasks in two columns
+   Mobile <768      : single vertical stack
+   =================================================== */
+
+/* ---------- Touch devices (any size): comfortable tap targets ---------- */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .tab-btn {
+    min-height: 42px;
+  }
+
+  .player-btn {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .task-add-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .task-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+
+  .task-delete-btn {
+    padding: 0.5rem;
+  }
+
+  .slider {
+    height: 6px;
+  }
+
+  .slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .progress-track {
+    height: 5px;
+  }
+
+  .progress-thumb {
+    width: 14px;
+    height: 14px;
+    transform: translate(50%, -50%) scale(1);
+  }
+}
+
+/* ---------- Large Desktop (1920px+) ---------- */
+@media (min-width: 1920px) {
+  :root {
+    --task-panel-width: 420px;
+  }
+
+  .main-container {
+    max-width: 620px;
+  }
+
+  .timer-card {
+    max-width: min(500px, 100%);
+  }
+
+  .music-player {
+    --player-width: 280px;
+  }
+
+  .bottom-quote {
+    max-width: 240px;
+  }
+}
+
+/* ---------- Laptop (1200-1399px): reduced floating layout ---------- */
+@media (max-width: 1399px) {
+  :root {
+    --task-panel-width: 320px;
+  }
+
+  .music-player {
+    --player-width: 225px;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    padding: 0.9rem;
+  }
+
+  .task-panel {
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .music-player,
+  .task-panel {
+    height: min(400px, calc(100vh - 8.5rem));
+  }
+
+  .main-container {
+    max-width: 500px;
+  }
+
+  .timer-card {
+    max-width: min(440px, 100%);
+    margin-bottom: 70px;
+  }
+
+  /* Taller side panels leave no room for the decorative quote */
+  .bottom-quote {
+    display: none;
+  }
+
+  .center-message {
+    font-size: 0.78rem;
+    padding: 0.6rem 1.1rem;
+  }
+
+  .navbar-container {
+    gap: 1rem;
+  }
+
+  .quote-section {
+    font-size: 0.8rem;
+  }
+}
+
+/* ---------- Tablet (768-1199px): timer on top, two columns below ---------- */
+@media (max-width: 1199px) {
+  /* Desktop locks scrolling; from here down the page flows and scrolls */
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Body is already a flex container — let it wrap into rows */
+  body {
+    background-attachment: scroll; /* fixed attachment janks on mobile */
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .navbar {
+    flex-basis: 100%;
+    order: 0;
+  }
+
+  /* Timer column: full row, centered */
+  .main-container {
+    flex: 0 0 100%;
+    order: 1;
+    max-width: 100%;
+    padding: 1.25rem 1rem 0;
+    gap: clamp(1rem, 2vh, 1.5rem);
+    justify-content: flex-start;
+  }
+
+  .timer-card {
+    max-width: min(460px, 92vw);
+    height: auto;
+    min-height: min(330px, 52vh);
+    margin-bottom: 0;
+  }
+
+  .center-message {
+    position: static;
+    transform: none;
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+    animation: none;
+  }
+
+  /* Player and tasks side by side beneath the timer */
+  .music-player,
+  .task-panel {
+    position: static;
+    margin: 0;
+    max-width: none;
+    animation: none;
+    width: min(420px, calc(50% - 1.5rem));
+    height: auto;
+  }
+
+  .music-player {
+    --player-width: none;
+    order: 2;
+    padding: 1rem;
+  }
+
+  /* Player height is content-based in the flow — bound the playlist
+     so it scrolls instead of growing the card */
+  .player-playlist {
+    max-height: 190px;
+  }
+
+  .task-panel {
+    order: 3;
+    max-height: 470px; /* list scrolls internally past this */
+  }
+
+  .discord-card {
+    position: static;
+    order: 4;
+    margin: 0;
+    animation: none;
+  }
+
+  .bottom-quote {
+    order: 5;
+  }
+
+  .player-controls {
+    justify-content: center;
+    gap: clamp(0.9rem, 3vw, 1.4rem);
+  }
+
+  /* Modals: always fit the screen, scroll internally */
+  .modal-dialog {
+    margin: 1rem auto;
+    max-width: min(500px, calc(100vw - 2rem));
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 16px input font prevents iOS Safari zoom-on-focus */
+  .task-input {
+    font-size: 16px;
+  }
+}
+
+/* ---------- Mobile (<768px): designed for phones, not shrunk ---------- */
+@media (max-width: 767px) {
+  /* One shared card width — roomy, never edge-to-edge */
+  :root {
+    --mobile-card-width: min(95vw, 420px);
+  }
+
+  /* Stack: timer -> motivation -> music -> tasks, breathing room between */
+  body {
+    gap: clamp(1.15rem, 3vh, 1.5rem); /* ~18-24px between cards */
+    padding-bottom: 3rem;
+  }
+
+  .music-player,
+  .task-panel,
+  .discord-card {
+    width: var(--mobile-card-width);
+  }
+
+  .timer-card {
+    width: var(--mobile-card-width);
+    max-width: none;
+  }
+
+  .session-tabs {
+    width: var(--mobile-card-width);
+    max-width: 100%;
+  }
+
+  .center-message {
+    width: var(--mobile-card-width);
+    max-width: var(--mobile-card-width);
+    justify-content: center;
+  }
+
+  /* --- Navbar: compact single row, nothing wraps or clips --- */
+  .navbar-container {
+    padding: 0.85rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .navbar-left {
+    flex-shrink: 0;
+  }
+
+  .navbar-right {
+    min-width: 0;
+  }
+
+  .logo-icon {
+    font-size: clamp(1.4rem, 4vw, 1.75rem);
+  }
+
+  .logo-text {
+    font-size: clamp(1.1rem, 3.6vw, 1.35rem);
+    white-space: nowrap;
+  }
+
+  .logo-subtitle {
+    font-size: 0.62rem;
+    white-space: nowrap;
+  }
+
+  .quote-section {
+    font-size: clamp(0.68rem, 2.3vw, 0.82rem);
+    gap: 0.35rem;
+  }
+
+  .quote-section i {
+    display: none; /* decorative quote marks — reclaim the space */
+  }
+
+  .quote-line {
+    white-space: nowrap;
+  }
+
+  /* --- Timer: the primary focus, ~300px and roomy --- */
+  .main-container {
+    padding: 1.1rem 0 0;
+    gap: clamp(1rem, 2.5vh, 1.35rem);
+  }
+
+  .timer-card {
+    padding: clamp(1.3rem, 5vw, 1.8rem);
+    min-height: 300px;
+    gap: 1rem;
+  }
+
+  .timer-label {
+    font-size: 0.85rem;
+  }
+
+  .timer-display {
+    font-size: clamp(3rem, 14vw, 4.25rem);
+  }
+
+  .timer-controls {
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .tab-btn {
+    padding: 0.65rem 0.5rem;
+    font-size: clamp(0.76rem, 2.5vw, 0.88rem);
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  /* --- Motivation card --- */
+  .center-message {
+    font-size: 0.82rem;
+    padding: 0.85rem 1.2rem;
+  }
+
+  /* --- Music player: playlist-first internal layout --- */
+  .music-player {
+    /* ~320px on small phones, up to 360px on tall ones */
+    height: clamp(320px, 52vh, 360px);
+    padding: 0.85rem 0.9rem;
+  }
+
+  /* Collapsible: header always visible, tap to expand/collapse */
+  .player-header {
+    padding-bottom: 0.55rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .player-collapse-btn {
+    display: block;
+  }
+
+  .music-player.collapsed {
+    height: auto;
+  }
+
+  .music-player.collapsed .player-playlist,
+  .music-player.collapsed .player-main {
+    display: none;
+  }
+
+  .music-player.collapsed .player-header {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  /* Compact header */
+  .player-header-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 0.75rem;
+  }
+
+  .player-header-title {
+    font-size: 0.88rem;
+  }
+
+  .player-header-count {
+    font-size: 0.66rem;
+  }
+
+  /* Playlist: the priority section — 3 rows small phones, 4-5 tall */
+  .player-playlist {
+    max-height: none;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .playlist-item {
+    padding: 0.42rem 0.55rem;
+  }
+
+  .playlist-item-title {
+    font-size: 0.8rem;
+  }
+
+  .playlist-item-artist {
+    font-size: 0.68rem;
+  }
+
+  /* Now Playing collapses to one tight line: title — artist */
+  .player-main {
+    gap: 0.45rem;
+  }
+
+  .now-playing {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+
+  .now-playing-label {
+    display: none; /* the accent title is self-explanatory here */
+  }
+
+  .song-title {
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .song-artist {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    flex: none;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Controls: fixed at the bottom, tightened */
+  .player-controls {
+    gap: clamp(0.6rem, 3.2vw, 1rem);
+  }
+
+  .player-btn {
+    padding: 0.38rem;
+    font-size: 0.8rem;
+  }
+
+  .player-btn-play {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .player-volume .player-btn {
+    padding: 0.3rem;
+  }
+
+  /* --- Task panel: list-first internal layout, matches the player --- */
+  .task-panel {
+    height: clamp(330px, 54vh, 380px);
+    max-height: none;
+  }
+
+  .task-panel.collapsed {
+    height: auto; /* fixed mobile height must not defeat collapsing */
+  }
+
+  /* Compact fixed sections: header, progress, input, footer */
+  .task-panel-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .task-panel-title {
+    font-size: 0.95rem;
+  }
+
+  .task-panel-content {
+    padding: 0.7rem 0.85rem 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .task-progress {
+    gap: 0.5rem;
+  }
+
+  .task-progress-text {
+    font-size: 0.68rem;
+  }
+
+  .task-input {
+    height: 44px;
+    font-size: 16px; /* keeps iOS from zooming on focus */
+  }
+
+  .task-add-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* The list is the priority section — it takes all remaining space */
+  .task-list {
+    max-height: none; /* bounded by the card, scrolls internally */
+    gap: 0.45rem;
+  }
+
+  .task-item {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .task-panel-footer {
+  }
+
+  .task-footer-btn {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.5rem;
+  }
+
+  /* Input row: full-width field + square Add button, never clipped */
+  .task-input-wrapper {
+    gap: 0.6rem;
+  }
+
+  .task-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .task-add-btn {
+    flex: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .task-item-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* ---------- Mobile Large (<=480px): keep it roomy, adjust details ---------- */
+@media (max-width: 480px) {
+  .logo-section {
+    gap: 0.5rem;
+  }
+
+  .logo-subtitle {
+    display: none; /* keeps the logo itself readable in the tight row */
+  }
+
+  .session-tabs {
+    padding: 0.3rem;
+    gap: 0.3rem;
+  }
+
+  .tab-btn i {
+    display: none;
+  }
+
+  .session-complete-actions {
+    flex-direction: column;
+  }
+
+  .session-complete-title {
+    font-size: 1.5rem;
+  }
+
+  .session-star {
+    font-size: 2.5rem;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1.1rem;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .modal-footer .btn {
+    flex: 1;
+  }
+}
+
+/* ---------- Mobile Small (<=360px): trims, not miniaturization ---------- */
+@media (max-width: 360px) {
+  .navbar-container {
+    padding: 0.7rem 0.85rem;
+  }
+
+  .quote-section {
+    font-size: 0.64rem;
+  }
+
+  .timer-card {
+    padding: 1.25rem 1.1rem;
+    min-height: 280px;
+    gap: 0.85rem;
+  }
+
+  .timer-display {
+    font-size: clamp(2.6rem, 15vw, 3.3rem);
+    letter-spacing: 0.05em;
+  }
+
+  .tab-btn {
+    padding: 0.55rem 0.4rem;
+    font-size: 0.74rem;
+  }
+
+  .music-player {
+    height: min(320px, 58vh);
+    padding: 1rem;
+  }
+
+  .task-panel {
+    height: min(330px, 58vh);
+  }
+
+  .player-controls {
+    gap: 0.7rem;
+  }
+
+  .task-footer-btn {
+    font-size: 0.78rem;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================================
+   ANIMATIONS & EFFECTS
+   =================================================== */
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Utility Classes */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}

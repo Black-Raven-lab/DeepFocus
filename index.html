@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Deep Focus - Premium Pomodoro Timer</title>
+
+    <!-- Bootstrap 5 CDN -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome CDN -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Live Wallpaper Layer (single reusable video, behind everything) -->
+    <div class="wallpaper-layer" id="wallpaperLayer" aria-hidden="true">
+      <video
+        id="wallpaperVideo"
+        class="wallpaper-video"
+        loop
+        muted
+        playsinline
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+      ></video>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <!-- Left: Logo -->
+        <div class="navbar-left">
+          <div class="logo-section">
+            <i class="fas fa-circle-notch logo-icon"></i>
+            <div>
+              <div class="logo-text">Deep Focus</div>
+              <div class="logo-subtitle">by Pong Seangly</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Quote -->
+        <div class="navbar-right">
+          <div class="quote-section">
+            <i class="fas fa-quote-left"></i>
+            <div>
+              <div class="quote-line">Discipline today</div>
+              <div class="quote-line">Freedom tomorrow.</div>
+            </div>
+            <i class="fas fa-quote-right"></i>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+      <!-- Session Tabs -->
+      <div class="session-tabs">
+        <button class="tab-btn active" data-session="pomodoro">
+          <i class="fas fa-hourglass-end"></i>
+          Pomodoro
+        </button>
+        <button class="tab-btn" data-session="short-break">
+          <i class="fas fa-mug-hot"></i>
+          Short Break
+        </button>
+        <button class="tab-btn" data-session="long-break">
+          <i class="fas fa-bell"></i>
+          Long Break
+        </button>
+      </div>
+
+      <!-- Timer Card -->
+      <div class="timer-card">
+        <div class="timer-label">FOCUS SESSION</div>
+
+        <div class="timer-display" id="timerDisplay">25:00</div>
+
+        <!-- Progress Bar -->
+        <div class="progress-indicators">
+          <div class="progress-bar-item">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="timer-controls">
+          <button class="btn btn-primary btn-start" id="startBtn">
+            <i class="fas fa-play"></i>
+            Start
+          </button>
+          <button class="btn btn-icon" id="pauseBtn" style="display: none">
+            <i class="fas fa-pause"></i>
+          </button>
+          <button class="btn btn-icon" id="resetBtn">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button
+            class="btn btn-icon"
+            id="settingsBtn"
+            data-bs-toggle="modal"
+            data-bs-target="#settingsModal"
+          >
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Center Message -->
+      <div class="center-message">
+        <i class="fas fa-user-check"></i>
+        <span>Stay focused. You're building your future.</span>
+      </div>
+    </main>
+
+    <!-- Bottom Left: Discord Card -->
+    <div class="discord-card"></div>
+
+    <!-- Music Player -->
+    <div class="music-player" id="musicPlayer">
+      <!-- Header -->
+      <div class="player-header">
+        <div class="player-header-icon">
+          <i class="fas fa-music"></i>
+        </div>
+        <div class="player-header-text">
+          <div class="player-header-title">Focus Music</div>
+          <div class="player-header-count" id="playlistCount">0 Songs</div>
+        </div>
+        <div class="player-equalizer" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <button
+          class="player-collapse-btn"
+          id="playerCollapseBtn"
+          title="Collapse player"
+        >
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </div>
+
+      <!-- Playlist (the only scrolling section) -->
+      <div class="player-playlist" id="playerPlaylist" role="list"></div>
+
+      <!-- Now Playing -->
+      <div class="player-main" id="playerMain">
+        <div class="now-playing">
+          <div class="now-playing-label">Now Playing</div>
+          <div class="song-title" id="songTitle">
+            lofi for study, chill, and more
+          </div>
+          <div class="song-artist" id="songArtist">
+            Your Eyes - Joey Pecoraro
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="player-progress">
+          <span class="player-time" id="currentTimeLabel">0:00</span>
+          <div
+            class="progress-track"
+            id="progressTrack"
+            role="slider"
+            tabindex="0"
+            aria-label="Seek"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div class="progress-fill" id="progressFill">
+              <div class="progress-thumb"></div>
+            </div>
+          </div>
+          <span class="player-time" id="totalTimeLabel">0:00</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="player-controls">
+          <button class="player-btn" id="shuffleBtn" title="Shuffle">
+            <i class="fas fa-random"></i>
+          </button>
+          <button class="player-btn" id="prevBtn" title="Previous track">
+            <i class="fas fa-step-backward"></i>
+          </button>
+          <button class="player-btn player-btn-play" id="playBtn" title="Play">
+            <i class="fas fa-play"></i>
+          </button>
+          <button class="player-btn" id="nextBtn" title="Next track">
+            <i class="fas fa-step-forward"></i>
+          </button>
+          <button class="player-btn" id="repeatBtn" title="Repeat: off">
+            <i class="fas fa-redo-alt"></i>
+          </button>
+        </div>
+
+        <!-- Volume -->
+        <div class="player-volume">
+          <button class="player-btn" id="volumeBtn" title="Mute">
+            <i class="fas fa-volume-up"></i>
+          </button>
+          <input
+            type="range"
+            id="volumeSlider"
+            class="slider"
+            min="0"
+            max="100"
+            value="70"
+            aria-label="Volume"
+          />
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="player-empty" id="playerEmpty" hidden>
+        <i class="fas fa-music"></i>
+        <p>No songs in your playlist</p>
+        <span>Add tracks to the PLAYLIST array in script.js</span>
+      </div>
+    </div>
+
+    <!-- Bottom Right: Quote -->
+    <div class="bottom-quote">
+      <div class="quote-text"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Settings</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <!-- Pomodoro Duration -->
+            <div class="settings-group">
+              <label for="pomodoroInput" class="settings-label">
+                <i class="fas fa-hourglass-end"></i>
+                Pomodoro Duration (minutes)
+              </label>
+              <input
+                type="number"
+                id="pomodoroInput"
+                class="form-control"
+                min="1"
+                max="60"
+                value="25"
+              />
+            </div>
+
+            <!-- Short Break Duration -->
+            <div class="settings-group">
+              <label for="shortBreakInput" class="settings-label">
+                <i class="fas fa-mug-hot"></i>
+                Short Break Duration (minutes)
+              </label>
+              <input
+                type="number"
+                id="shortBreakInput"
+                class="form-control"
+                min="1"
+                max="30"
+                value="5"
+              />
+            </div>
+
+            <!-- Long Break Duration -->
+            <div class="settings-group">
+              <label for="longBreakInput" class="settings-label">
+                <i class="fas fa-bell"></i>
+                Long Break Duration (minutes)
+              </label>
+              <input
+                type="number"
+                id="longBreakInput"
+                class="form-control"
+                min="1"
+                max="60"
+                value="15"
+              />
+            </div>
+
+            <!-- Auto Start -->
+            <div class="settings-group">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  id="autoStartToggle"
+                  class="form-check-input"
+                />
+                <label class="form-check-label" for="autoStartToggle">
+                  Auto-start next session
+                </label>
+              </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="settings-group">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  id="notificationToggle"
+                  class="form-check-input"
+                  checked
+                />
+                <label class="form-check-label" for="notificationToggle">
+                  Enable notifications
+                </label>
+              </div>
+            </div>
+
+            <!-- Sound Enabled -->
+            <div class="settings-group">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  id="soundToggle"
+                  class="form-check-input"
+                  checked
+                />
+                <label class="form-check-label" for="soundToggle">
+                  Enable notification sound
+                </label>
+              </div>
+            </div>
+
+            <!-- Volume Slider -->
+            <div class="settings-group">
+              <label for="soundVolumeSlider" class="settings-label">
+                <i class="fas fa-volume-up"></i>
+                Notification Volume
+              </label>
+              <input
+                type="range"
+                id="soundVolumeSlider"
+                class="form-range"
+                min="0"
+                max="100"
+                value="70"
+              />
+            </div>
+
+            <!-- Vibration -->
+            <div class="settings-group">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  id="vibrationToggle"
+                  class="form-check-input"
+                />
+                <label class="form-check-label" for="vibrationToggle">
+                  Enable vibration (mobile)
+                </label>
+              </div>
+            </div>
+
+            <!-- ============ Wallpaper Settings ============ -->
+            <hr class="settings-divider" />
+            <div class="settings-section-title">
+              <i class="fas fa-image"></i>
+              Live Wallpaper
+            </div>
+
+            <!-- Built-in Live Wallpapers -->
+            <div class="settings-group">
+              <label for="builtinWallpaperSelect" class="settings-label">
+                <i class="fas fa-film"></i>
+                Built-in Live Wallpapers
+              </label>
+              <select id="builtinWallpaperSelect" class="form-select"></select>
+            </div>
+
+            <!-- Upload Video -->
+            <div class="settings-group">
+              <label for="wallpaperUploadInput" class="settings-label">
+                <i class="fas fa-upload"></i>
+                Upload Your Own Video
+              </label>
+              <input
+                type="file"
+                id="wallpaperUploadInput"
+                class="form-control"
+                accept="video/mp4,video/webm"
+              />
+              <small class="settings-hint">
+                MP4 or WebM. Uploaded videos last until the page reloads.
+              </small>
+            </div>
+
+            <!-- Background Audio -->
+            <div class="settings-group">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  id="wallpaperAudioToggle"
+                  class="form-check-input"
+                />
+                <label class="form-check-label" for="wallpaperAudioToggle">
+                  Play wallpaper audio
+                </label>
+              </div>
+            </div>
+
+            <!-- Brightness -->
+            <div class="settings-group">
+              <label for="wallpaperBrightnessSlider" class="settings-label">
+                <i class="fas fa-sun"></i>
+                Brightness
+                <span class="settings-value" id="wallpaperBrightnessValue"
+                  >100%</span
+                >
+              </label>
+              <input
+                type="range"
+                id="wallpaperBrightnessSlider"
+                class="form-range"
+                min="40"
+                max="130"
+                value="100"
+              />
+            </div>
+
+            <!-- Overlay Opacity -->
+            <div class="settings-group">
+              <label for="wallpaperOverlaySlider" class="settings-label">
+                <i class="fas fa-adjust"></i>
+                Overlay Darkness
+                <span class="settings-value" id="wallpaperOverlayValue"
+                  >20%</span
+                >
+              </label>
+              <input
+                type="range"
+                id="wallpaperOverlaySlider"
+                class="form-range"
+                min="0"
+                max="80"
+                value="20"
+              />
+            </div>
+
+            <!-- Blur -->
+            <div class="settings-group">
+              <label for="wallpaperBlurSlider" class="settings-label">
+                <i class="fas fa-water"></i>
+                Background Blur
+                <span class="settings-value" id="wallpaperBlurValue">0px</span>
+              </label>
+              <input
+                type="range"
+                id="wallpaperBlurSlider"
+                class="form-range"
+                min="0"
+                max="20"
+                value="0"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" id="saveSettingsBtn">
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Panel (Bottom Right) -->
+    <div class="task-panel" id="taskPanel">
+      <div class="task-panel-header">
+        <h3 class="task-panel-title">
+          <i class="fas fa-tasks"></i>
+          Today&apos;s Tasks
+        </h3>
+        <button class="task-panel-close" id="taskPanelClose">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </div>
+
+      <div class="task-panel-content">
+        <!-- Progress -->
+        <div class="task-progress">
+          <div class="task-progress-bar">
+            <div class="task-progress-fill" id="taskProgressFill"></div>
+          </div>
+          <div class="task-progress-text" id="taskProgressText">0 / 0</div>
+        </div>
+
+        <!-- Task Input -->
+        <div class="task-input-wrapper">
+          <input
+            type="text"
+            class="task-input"
+            id="taskInput"
+            placeholder="What are you focusing on today?"
+          />
+          <button class="task-add-btn" id="taskAddBtn">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+
+        <!-- Task List -->
+        <div class="task-list" id="taskList"></div>
+
+        <!-- Task Footer -->
+        <div class="task-panel-footer">
+          <button class="task-footer-btn" id="taskClearBtn">
+            <i class="fas fa-check-double"></i>
+            Clear Completed
+          </button>
+          <button
+            class="task-footer-btn task-footer-btn-danger"
+            id="taskRemoveAllBtn"
+          >
+            <i class="fas fa-trash"></i>
+            Remove All
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Complete Modal -->
+    <div
+      class="modal fade"
+      id="sessionCompleteModal"
+      tabindex="-1"
+      data-bs-backdrop="static"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content session-complete-modal">
+          <div class="session-complete-header">
+            <i class="fas fa-star session-star"></i>
+          </div>
+          <div class="session-complete-body">
+            <h2 class="session-complete-title" id="sessionCompleteTitle">
+              Great Work!
+            </h2>
+            <p class="session-complete-message" id="sessionCompleteMessage">
+              You&apos;ve completed a focus session. Ready for a break?
+            </p>
+            <div class="session-complete-actions">
+              <button class="btn btn-primary" id="nextSessionBtn">
+                <i class="fas fa-arrow-right"></i>
+                Next Session
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="dismissBtn"
+                data-bs-dismiss="modal"
+              >
+                <i class="fas fa-times"></i>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Choose Next Session Modal -->
+    <div
+      class="modal fade"
+      id="chooseSessionModal"
+      tabindex="-1"
+      data-bs-backdrop="static"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content session-complete-modal">
+          <div class="session-complete-header">
+            <i class="fas fa-forward session-star"></i>
+          </div>
+          <div class="session-complete-body">
+            <h2 class="session-complete-title">
+              What would you like to do next?
+            </h2>
+            <p class="session-complete-message">
+              Pick a break — it will start automatically.
+            </p>
+            <div class="session-complete-actions">
+              <button class="btn btn-primary" id="shortBreakChoiceBtn">
+                <i class="fas fa-mug-hot"></i>
+                Short Break
+              </button>
+              <button class="btn btn-secondary" id="longBreakChoiceBtn">
+                <i class="fas fa-bell"></i>
+                Long Break
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Element for Music (source is set by the MusicPlayer playlist in script.js) -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+  </body>
+</html>
