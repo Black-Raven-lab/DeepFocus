@@ -144,7 +144,7 @@
           <i class="fas fa-music"></i>
         </div>
         <div class="player-header-text">
-          <div class="player-header-title">Focus Music</div>
+          <div class="player-header-title">Focus Audio</div>
           <div class="player-header-count" id="playlistCount">0 Songs</div>
         </div>
         <div class="player-equalizer" aria-hidden="true">
@@ -159,8 +159,39 @@
         </button>
       </div>
 
+      <!-- Category tabs: browsing only — playback continues across tabs -->
+      <div class="player-tabs" id="playerTabs">
+        <button class="player-tab active" data-category="music">
+          🎵 Music
+        </button>
+        <button class="player-tab" data-category="ambient">🌿 Ambient</button>
+      </div>
+
       <!-- Playlist (the only scrolling section) -->
       <div class="player-playlist" id="playerPlaylist" role="list"></div>
+
+      <!-- Ambient tab: compact active-sounds mixer (library in modal) -->
+      <div class="ambient-panel" id="ambientPanel" hidden>
+        <div class="ambient-active-list" id="ambientActiveList"></div>
+        <div class="ambient-master">
+          <button
+            class="player-btn ambient-strip-btn"
+            id="ambientToggleBtn"
+            title="Pause all ambient"
+          >
+            <i class="fas fa-pause"></i>
+          </button>
+          <input
+            type="range"
+            id="ambientVolumeSlider"
+            class="slider"
+            min="0"
+            max="100"
+            value="50"
+            aria-label="Ambient volume"
+          />
+        </div>
+      </div>
 
       <!-- Now Playing -->
       <div class="player-main" id="playerMain">
@@ -463,6 +494,9 @@
               />
             </div>
 
+            <!-- ============ Ambient Library ============ -->
+            <hr class="settings-divider" />
+
             <!-- Blur -->
             <div class="settings-group">
               <label for="wallpaperBlurSlider" class="settings-label">
@@ -622,8 +656,11 @@
       </div>
     </div>
 
-    <!-- Audio Element for Music (source is set by the MusicPlayer playlist in script.js) -->
+    <!-- Dual-audio architecture: two fully independent elements.
+         Music: transport, seeking, shuffle/repeat, its own volume.
+         Ambient: loops forever, its own volume, mixes over the music. -->
     <audio id="audioPlayer" preload="metadata"></audio>
+    <audio id="ambientPlayer" loop preload="none"></audio>
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

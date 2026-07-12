@@ -16,6 +16,126 @@ function isTypingContext(target) {
 }
 
 /**
+ * Celebration — premium confetti layer rendered ABOVE the entire UI.
+ * One fixed container attached directly to document.body (never inside
+ * a card, transform container, or stacking context), so particles can
+ * never be clipped by overflow, border-radius, or z-index. Physics:
+ * radial burst from the origin element, outward spread, then a gentle
+ * gravity fall with sway, fading out over ~2.2-2.9s. A single rAF loop
+ * animates compositor-only properties (transform/opacity) for 60fps.
+ */
+const Celebration = {
+  container: null,
+  particles: [],
+  raf: null,
+  lastT: 0,
+
+  getContainer() {
+    if (!this.container) {
+      const el = document.createElement("div");
+      el.className = "celebration-layer";
+      el.setAttribute("aria-hidden", "true");
+      document.body.appendChild(el);
+      this.container = el;
+    }
+    return this.container;
+  },
+
+  /** Fire a burst from the center of originEl (or screen center) */
+  burst(originEl, count = 70) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return; // respect the user's motion preference
+    }
+    const container = this.getContainer();
+    const rect = originEl && originEl.getBoundingClientRect();
+    const ox = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+    const oy = rect ? rect.top + rect.height / 3 : window.innerHeight / 2;
+
+    // Palette follows the current wallpaper accent
+    const rootStyles = getComputedStyle(document.documentElement);
+    const accent =
+      rootStyles.getPropertyValue("--accent-color").trim() || "#a855f7";
+    const hover =
+      rootStyles.getPropertyValue("--accent-hover").trim() || "#c084fc";
+    const colors = [accent, hover, "#ffffff", "#fbbf24", accent];
+
+    const now = performance.now();
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement("div");
+      el.className = "celebration-particle";
+      const size = 5 + Math.random() * 7;
+      el.style.width = size + "px";
+      el.style.height =
+        (Math.random() < 0.45 ? size : size * 0.45).toFixed(1) + "px";
+      el.style.background = colors[i % colors.length];
+      el.style.borderRadius = Math.random() < 0.5 ? "50%" : "2px";
+      container.appendChild(el);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 4.5 + Math.random() * 9;
+      this.particles.push({
+        el,
+        x: ox,
+        y: oy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 4, // upward bias: a real "pop"
+        rot: Math.random() * 360,
+        vr: (Math.random() - 0.5) * 16,
+        sway: Math.random() * Math.PI * 2,
+        born: now,
+        life: 2200 + Math.random() * 700, // fades out at 2.2-2.9s
+      });
+    }
+
+    if (!this.raf) {
+      this.lastT = now;
+      this.raf = requestAnimationFrame((t) => this.tick(t));
+    }
+  },
+
+  tick(t) {
+    // Normalize physics to a 60fps baseline so high-refresh displays
+    // and dropped frames both look identical
+    const dt = Math.min(Math.max((t - this.lastT) / 16.67, 0.5), 2);
+    this.lastT = t;
+
+    const alive = [];
+    for (const p of this.particles) {
+      const age = t - p.born;
+      if (age >= p.life) {
+        p.el.remove();
+        continue;
+      }
+      const drag = Math.pow(0.96, dt);
+      p.vx *= drag;
+      p.vy = Math.min(p.vy * drag + 0.3 * dt, 6.5); // gravity, capped
+      p.sway += 0.08 * dt;
+      p.x += (p.vx + Math.sin(p.sway) * 0.7) * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+
+      const fadeStart = p.life - 700;
+      const opacity =
+        age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / 700) : 1;
+      p.el.style.opacity = opacity.toFixed(3);
+      p.el.style.transform =
+        "translate3d(" +
+        p.x.toFixed(1) +
+        "px, " +
+        p.y.toFixed(1) +
+        "px, 0) rotate(" +
+        p.rot.toFixed(1) +
+        "deg)";
+      alive.push(p);
+    }
+    this.particles = alive;
+    this.raf = alive.length
+      ? requestAnimationFrame((tt) => this.tick(tt))
+      : null;
+  },
+};
+
+/**
  * PomodoroTimer Class - Main application logic
  */
 class PomodoroTimer {
@@ -372,22 +492,34 @@ class PomodoroTimer {
  */
 const PLAYLIST = [
   {
-    title: "hate that i made you love me",
-    artist: "Ariana Grande",
+    title: "暗裏著迷 - Themes",
+    artist: "Andy Lau",
     src: "assets/sounds/music1.mp3",
-    cover: "",
+    cover: "music-pic.jpg",
   },
   {
-    title: "First Love | Remember The Day",
-    artist: "Piano Themes",
+    title: "半點心",
+    artist: "Grasshopper",
     src: "assets/sounds/music2.mp3",
-    cover: "",
+    cover: "music-pic.jpg",
   },
   {
-    title: "Những Lời Dối Gian (Thiện Toàn Remix Tiktok 2025)",
-    artist: "Wanji Music 2024",
+    title: "Tian Mi Mi",
+    artist: "Teresa Teng",
     src: "assets/sounds/music3.mp3",
-    cover: "",
+    cover: "music-pic.jpg",
+  },
+  {
+    title: "DJ Xuân Đình Tuyết Remix (0.9x)",
+    artist: "Your Eyes - Joey Pecoraro",
+    src: "assets/sounds/music4.mp3",
+    cover: "music-pic.jpg",
+  },
+  {
+    title: "l月亮代表我的心",
+    artist: "Teresa Teng",
+    src: "assets/sounds/music5.mp3",
+    cover: "music-pic.jpg",
   },
   // {
   //   title: "Second Track",
@@ -463,6 +595,541 @@ function hexToRgba(hex, alpha) {
 }
 
 /**
+ * AMBIENT_SOUNDS — built-in natural/ambient loops for the Ambient tab.
+ * Each entry: { id, title, icon, file, loop } — files loop seamlessly
+ * until stopped. Add or remove entries freely; the UI adapts.
+ * The shape supports future mixing (multiple ids playing at once).
+ */
+const AMBIENT_SOUNDS = [
+  {
+    id: "ocean",
+    title: "Ocean Waves",
+    icon: "\u{1F30A}",
+    file: "assets/ambients/ocean-waves.mp3",
+    loop: true,
+  },
+  {
+    id: "rain",
+    title: "Rain",
+    icon: "\u{1F327}",
+    file: "assets/ambients/rain.mp3",
+    loop: true,
+  },
+  {
+    id: "thunder",
+    title: "Thunderstorm",
+    icon: "\u{26C8}",
+    file: "assets/ambients/thunder.mp3",
+    loop: true,
+  },
+  {
+    id: "forest",
+    title: "Forest",
+    icon: "\u{1F332}",
+    file: "assets/ambients/forest.mp3",
+    loop: true,
+  },
+  {
+    id: "wind",
+    title: "Wind Through Trees",
+    icon: "\u{1F343}",
+    file: "assets/ambients/wind.mp3",
+    loop: true,
+  },
+  {
+    id: "fireplace",
+    title: "Fireplace",
+    icon: "\u{1F525}",
+    file: "assets/ambients/fireplace.mp3",
+    loop: true,
+  },
+  {
+    id: "coffee",
+    title: "Coffee Shop",
+    icon: "\u2615",
+    file: "assets/ambients/coffee.mp3",
+    loop: true,
+  },
+  {
+    id: "library",
+    title: "Library",
+    icon: "\u{1F4DA}",
+    file: "assets/ambients/library.mp3",
+    loop: true,
+  },
+  {
+    id: "crickets",
+    title: "Night Crickets",
+    icon: "\u{1F303}",
+    file: "assets/ambients/crikets.mp3",
+    loop: true,
+  },
+  {
+    id: "night-forest",
+    title: "Night Forest",
+    icon: "\u{1F989}",
+    file: "assets/ambients/night-forest.mp3",
+    loop: true,
+  },
+  {
+    id: "birds",
+    title: "Morning Birds",
+    icon: "\u{1F426}",
+    file: "assets/ambients/birds.mp3",
+    loop: true,
+  },
+  {
+    id: "river",
+    title: "River Stream",
+    icon: "\u{1F3DE}",
+    file: "assets/ambients/river.mp3",
+    loop: true,
+  },
+  {
+    id: "snow",
+    title: "Snow Wind",
+    icon: "\u2744",
+    file: "assets/ambients/snow.mp3",
+    loop: true,
+  },
+  {
+    id: "campfire",
+    title: "Campfire",
+    icon: "\u{1F3D5}",
+    file: "assets/ambients/campfire.mp3",
+    loop: true,
+  },
+  {
+    id: "train",
+    title: "Train Journey",
+    icon: "\u{1F682}",
+    file: "assets/ambients/train.mp3",
+    loop: true,
+  },
+];
+
+/**
+ * AmbientPlayer — independent multi-sound ambient mixing engine.
+ * Any number of sounds can play simultaneously alongside the music.
+ * Audio elements come from a reusable pool (never destroyed, only
+ * reassigned), each sound loops until removed, and one master volume
+ * governs the whole ambient mix. Owns the compact active-sounds panel
+ * and the library modal; persists to its own localStorage key.
+ */
+class AmbientPlayer {
+  static STORAGE_KEY = "deepFocusAmbient";
+
+  constructor(sounds, { onChange } = {}) {
+    // Library pipeline: built-ins minus user removals, plus imported
+    // files, with rename overrides — recomputed by rebuildSounds()
+    this.baseSounds = (Array.isArray(sounds) ? sounds : []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      icon: s.icon,
+      src: s.file,
+    }));
+    this.imported = []; // session-only (object URLs)
+    this.removedIds = new Set();
+    this.renames = {};
+    this.onChange = typeof onChange === "function" ? onChange : () => {};
+
+    // Element pool: the static #ambientPlayer element is slot 0;
+    // more are created on demand and reused forever after
+    const seed = document.getElementById("ambientPlayer");
+    this.pool = seed ? [seed] : [];
+    this.active = new Map(); // sound id -> pooled audio element
+
+    this.panelEl = document.getElementById("ambientPanel");
+    this.activeListEl = document.getElementById("ambientActiveList");
+    this.toggleBtn = document.getElementById("ambientToggleBtn");
+    this.volumeSlider = document.getElementById("ambientVolumeSlider");
+    this.playerCard = document.getElementById("musicPlayer");
+    // Settings-page management UI
+    this.manageListEl = document.getElementById("ambientManageList");
+    this.importInput = document.getElementById("ambientImportInput");
+
+    this.volume = 0.5; // master ambient volume — independent of music
+    this.retryOnGesture = false;
+
+    if (!seed || !this.panelEl) return;
+
+    this.loadState(); // renames/removals must exist before building
+    this.rebuildSounds();
+    this.buildLibrary();
+    this.renderManageList();
+    this.initEventListeners();
+    this.restore();
+  }
+
+  /** Recompute the effective library from base + user customization */
+  rebuildSounds() {
+    this.sounds = [
+      ...this.baseSounds.filter((s) => !this.removedIds.has(s.id)),
+      ...this.imported,
+    ].map((s) => ({ ...s, title: this.renames[s.id] || s.title }));
+  }
+
+  /* ---------- Element pool ---------- */
+
+  acquireElement() {
+    const inUse = new Set(this.active.values());
+    let el = this.pool.find((a) => !inUse.has(a));
+    if (!el) {
+      el = new Audio(); // grown once, reused forever
+      el.preload = "none";
+      this.pool.push(el);
+    }
+    el.loop = true;
+    el.volume = this.volume;
+    return el;
+  }
+
+  /* ---------- Wiring ---------- */
+
+  initEventListeners() {
+    this.toggleBtn.addEventListener("click", () => this.masterToggle());
+
+    this.volumeSlider.addEventListener("input", (e) => {
+      this.setVolume(e.target.value / 100);
+    });
+
+    // In-card library rows (delegated): the row itself toggles the
+    // sound; the hover-revealed x stops an active one explicitly
+    this.activeListEl.addEventListener("click", (e) => {
+      const row = e.target.closest(".ambient-active-row");
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.closest(".ambient-row-remove")) {
+        this.remove(id);
+      } else {
+        this.active.has(id) ? this.remove(id) : this.add(id);
+      }
+    });
+
+    this.activeListEl.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const row = e.target.closest(".ambient-active-row");
+      if (!row) return;
+      e.preventDefault();
+      const id = row.dataset.id;
+      this.active.has(id) ? this.remove(id) : this.add(id);
+    });
+
+    // Settings: import MP3s (instant, session-bound object URLs)
+    if (this.importInput) {
+      this.importInput.addEventListener("change", () => {
+        this.importFiles(this.importInput.files);
+        this.importInput.value = "";
+      });
+    }
+
+    // Settings: rename (inline inputs) and remove (delegated)
+    if (this.manageListEl) {
+      this.manageListEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".ambient-manage-remove");
+        if (!btn) return;
+        this.removeSound(btn.closest(".ambient-manage-row").dataset.id);
+      });
+      this.manageListEl.addEventListener("change", (e) => {
+        const input = e.target.closest(".ambient-manage-name");
+        if (!input) return;
+        this.renameSound(
+          input.closest(".ambient-manage-row").dataset.id,
+          input.value.trim(),
+        );
+      });
+    }
+  }
+
+  buildLibrary() {
+    // In-card library rows — rebuilt only when the library itself
+    // changes (import/remove/rename); state updates happen in place
+    const fragment = document.createDocumentFragment();
+    this.rowsById = new Map();
+
+    this.sounds.forEach((s) => {
+      const row = document.createElement("div");
+      row.className = "ambient-active-row";
+      row.dataset.id = s.id;
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.innerHTML =
+        '<span class="ambient-row-icon">' +
+        s.icon +
+        '</span><span class="ambient-row-title">' +
+        s.title +
+        '</span><span class="ambient-row-live">' +
+        '<span class="mini-eq"><i></i><i></i><i></i></span>' +
+        '<span class="ambient-row-playing">Playing</span>' +
+        "</span>" +
+        '<button type="button" class="ambient-row-btn ambient-row-remove" title="Stop sound">' +
+        '<i class="fas fa-times"></i></button>';
+      this.rowsById.set(s.id, row);
+      fragment.appendChild(row);
+    });
+
+    this.activeListEl.replaceChildren(fragment);
+    this.refreshUI();
+  }
+
+  /* ---------- Mixing ---------- */ /* ---------- Mixing ---------- */
+
+  get isPlaying() {
+    for (const el of this.active.values()) if (!el.paused) return true;
+    return false;
+  }
+
+  soundById(id) {
+    return this.sounds.find((s) => s.id === id) || null;
+  }
+
+  /** Start a sound (immediately) alongside whatever else is playing */
+  add(id) {
+    const sound = this.soundById(id);
+    if (!sound || this.active.has(id)) return;
+    const el = this.acquireElement();
+    if (el.getAttribute("src") !== sound.src) {
+      el.setAttribute("src", sound.src);
+      el.load();
+    }
+    this.active.set(id, el);
+    this.playElement(el);
+    this.refreshUI();
+    this.saveState();
+  }
+
+  /** Stop a sound and release its element back to the pool */
+  remove(id) {
+    const el = this.active.get(id);
+    if (!el) return;
+    el.pause();
+    this.active.delete(id);
+    this.refreshUI();
+    this.saveState();
+  }
+
+  toggleSoundPlayback(id) {
+    const el = this.active.get(id);
+    if (!el) return;
+    el.paused ? this.playElement(el) : el.pause();
+    // element events don't exist on pooled elements — sync manually
+    this.refreshUI();
+    this.saveState();
+  }
+
+  /** Pause everything, or resume everything, in one tap */
+  masterToggle() {
+    if (this.active.size === 0) return;
+    if (this.isPlaying) {
+      for (const el of this.active.values()) el.pause();
+    } else {
+      for (const el of this.active.values()) this.playElement(el);
+    }
+    this.refreshUI();
+    this.saveState();
+  }
+
+  playElement(el) {
+    el.play()
+      .then(() => {
+        this.retryOnGesture = false;
+        this.refreshUI();
+      })
+      .catch(() => this.armGestureRetry());
+  }
+
+  armGestureRetry() {
+    if (this.retryOnGesture) return;
+    this.retryOnGesture = true;
+    document.addEventListener(
+      "pointerdown",
+      () => {
+        this.retryOnGesture = false;
+        for (const el of this.active.values()) {
+          if (el.paused) el.play().catch(() => {});
+        }
+        this.refreshUI();
+      },
+      { once: true },
+    );
+  }
+
+  setVolume(v) {
+    this.volume = Math.min(1, Math.max(0, v));
+    for (const el of this.active.values()) el.volume = this.volume;
+    this.saveState();
+  }
+
+  /* ---------- UI ---------- */
+
+  refreshUI() {
+    // Update the in-card rows in place — no rebuilding. Active sounds
+    // float to the top (appendChild moves cached nodes, cheaply).
+    const order = [
+      ...this.active.keys(),
+      ...this.sounds.map((s) => s.id).filter((id) => !this.active.has(id)),
+    ];
+    for (const id of order) {
+      const row = this.rowsById.get(id);
+      if (!row) continue;
+      const el = this.active.get(id);
+      row.classList.toggle("active", !!el);
+      row.classList.toggle("audible", !!el && !el.paused);
+      if (el) {
+        row.querySelector(".ambient-row-playing").textContent = el.paused
+          ? "Paused"
+          : "Playing";
+      }
+      this.activeListEl.appendChild(row); // reorders, never recreates
+    }
+
+    // Master row + card-level state
+    const playing = this.isPlaying;
+    this.toggleBtn.innerHTML = playing
+      ? '<i class="fas fa-pause"></i>'
+      : '<i class="fas fa-play"></i>';
+    this.toggleBtn.disabled = this.active.size === 0;
+    this.playerCard.classList.toggle("ambient-playing", playing);
+    this.onChange();
+  }
+
+  /* ---------- Library management (Settings page) ---------- */
+
+  /** Import MP3s as session sounds — playable and mixable instantly */
+  importFiles(fileList) {
+    const files = Array.from(fileList || []).filter((f) =>
+      f.type.startsWith("audio"),
+    );
+    if (files.length === 0) return;
+    files.forEach((file, i) => {
+      this.imported.push({
+        id: "import-" + Date.now() + "-" + i,
+        title: file.name.replace(/\.[^.]+$/, ""),
+        icon: "\u{1F3A7}",
+        src: URL.createObjectURL(file),
+      });
+    });
+    this.rebuildLibraryUI();
+  }
+
+  /** Remove a sound from the library (stops it first if active) */
+  removeSound(id) {
+    if (this.active.has(id)) this.remove(id);
+    const importedIdx = this.imported.findIndex((s) => s.id === id);
+    if (importedIdx >= 0) {
+      URL.revokeObjectURL(this.imported[importedIdx].src);
+      this.imported.splice(importedIdx, 1);
+    } else {
+      this.removedIds.add(id); // built-ins: persisted removal
+    }
+    delete this.renames[id];
+    this.rebuildLibraryUI();
+  }
+
+  renameSound(id, name) {
+    if (!name) return;
+    this.renames[id] = name;
+    this.rebuildLibraryUI();
+  }
+
+  rebuildLibraryUI() {
+    this.rebuildSounds();
+    this.buildLibrary();
+    this.renderManageList();
+    this.saveState();
+    this.onChange(); // header counts etc. stay live
+  }
+
+  /** Settings page list: icon, inline-rename input, remove button */
+  renderManageList() {
+    if (!this.manageListEl) return;
+    const fragment = document.createDocumentFragment();
+    this.sounds.forEach((s) => {
+      const row = document.createElement("div");
+      row.className = "ambient-manage-row";
+      row.dataset.id = s.id;
+
+      const icon = document.createElement("span");
+      icon.className = "ambient-manage-icon";
+      icon.textContent = s.icon;
+
+      const name = document.createElement("input");
+      name.type = "text";
+      name.className = "form-control ambient-manage-name";
+      name.value = s.title;
+      name.setAttribute("aria-label", "Sound name");
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "ambient-manage-remove";
+      removeBtn.title = "Remove sound";
+      removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+
+      row.append(icon, name, removeBtn);
+      fragment.appendChild(row);
+    });
+    this.manageListEl.replaceChildren(fragment);
+  }
+
+  /* ---------- Persistence ---------- */
+
+  saveState() {
+    try {
+      localStorage.setItem(
+        AmbientPlayer.STORAGE_KEY,
+        JSON.stringify({
+          activeIds: [...this.active.keys()],
+          volume: this.volume,
+          wasPlaying: this.isPlaying,
+          removedIds: [...this.removedIds],
+          renames: this.renames,
+        }),
+      );
+    } catch (_) {
+      /* storage unavailable — ignore */
+    }
+  }
+
+  loadState() {
+    this.savedIds = [];
+    this.wasPlaying = false;
+    try {
+      const s = JSON.parse(localStorage.getItem(AmbientPlayer.STORAGE_KEY));
+      if (s && typeof s === "object") {
+        if (typeof s.volume === "number") this.volume = s.volume;
+        if (Array.isArray(s.activeIds)) {
+          this.savedIds = s.activeIds;
+        } else if (s.soundId) {
+          this.savedIds = [s.soundId]; // migrate single-sound saves
+        }
+        this.wasPlaying = !!s.wasPlaying;
+        if (Array.isArray(s.removedIds)) {
+          this.removedIds = new Set(s.removedIds);
+        }
+        if (s.renames && typeof s.renames === "object") {
+          this.renames = s.renames;
+        }
+      }
+    } catch (_) {
+      /* corrupted storage — keep defaults */
+    }
+  }
+
+  restore() {
+    this.volumeSlider.value = String(Math.round(this.volume * 100));
+    for (const id of this.savedIds) {
+      const sound = this.soundById(id);
+      if (!sound) continue;
+      const el = this.acquireElement();
+      el.setAttribute("src", sound.src);
+      this.active.set(id, el);
+      if (this.wasPlaying) this.playElement(el);
+    }
+    this.refreshUI();
+  }
+}
+
+/**
  * MusicPlayer Class — playlist, shuffle, repeat, seeking,
  * fade transitions, and localStorage persistence.
  * Fully independent of the Pomodoro timer, so music keeps
@@ -472,8 +1139,20 @@ class MusicPlayer {
   static STORAGE_KEY = "deepFocusMusic";
   static FADE_MS = 350;
 
-  constructor(playlist) {
-    this.playlist = Array.isArray(playlist) ? playlist : [];
+  constructor(playlist, ambientSounds) {
+    // Dual-audio: this class drives MUSIC on its own element; the
+    // AmbientPlayer below drives ambient on a second element. Both can
+    // play simultaneously and never interrupt each other. Tabs and the
+    // playlist UI live here; ambient rows just delegate to the engine.
+    this.ambient = new AmbientPlayer(ambientSounds, {
+      onChange: () => this.updateActiveItem(),
+    });
+    this.libraries = {
+      music: Array.isArray(playlist) ? playlist : [],
+      ambient: this.ambient.sounds, // for row rendering only
+    };
+    this.activeTab = "music";
+    this.playlist = this.libraries.music; // playback is music-only here
     this.trackIndex = 0;
     this.volume = 0.7; // user volume, 0–1
     this.isMuted = false;
@@ -490,6 +1169,7 @@ class MusicPlayer {
     this.emptyEl = document.getElementById("playerEmpty");
     this.playlistEl = document.getElementById("playerPlaylist");
     this.countEl = document.getElementById("playlistCount");
+    this.tabButtons = Array.from(document.querySelectorAll(".player-tab"));
     this.titleEl = document.getElementById("songTitle");
     this.artistEl = document.getElementById("songArtist");
     this.currentTimeEl = document.getElementById("currentTimeLabel");
@@ -508,8 +1188,8 @@ class MusicPlayer {
 
     if (!this.audio || !this.playerEl) return;
 
-    // Empty playlist → clean empty state, no listeners needed
-    if (this.playlist.length === 0) {
+    // Empty state only when there is nothing to play in ANY category
+    if (this.libraries.music.length + this.libraries.ambient.length === 0) {
       this.mainEl.hidden = true;
       if (this.playlistEl) this.playlistEl.hidden = true;
       this.emptyEl.hidden = false;
@@ -519,7 +1199,13 @@ class MusicPlayer {
     this.loadState();
     this.renderPlaylist(); // built once — items are reused, never recreated
     this.initEventListeners();
-    this.loadTrack(this.trackIndex, { resumePosition: true });
+    if (this.playlist.length > 0) {
+      this.loadTrack(this.trackIndex, { resumePosition: true });
+    } else {
+      // Ambient-only setup: hide the music-specific sections
+      this.playerEl.classList.add("music-empty");
+      this.activeTab = "ambient";
+    }
     this.applyVolumeUI();
     this.applyModeUI();
   }
@@ -615,7 +1301,7 @@ class MusicPlayer {
 
     this.audio.src = track.src;
     this.titleEl.textContent = track.title;
-    this.artistEl.textContent = track.artist;
+    this.artistEl.textContent = track.artist || "";
     this.setProgress(0, { instant: true });
     this.currentTimeEl.textContent = "0:00";
     this.totalTimeEl.textContent = "0:00";
@@ -826,18 +1512,42 @@ class MusicPlayer {
   renderPlaylist() {
     if (!this.playlistEl) return;
 
-    const fragment = document.createDocumentFragment();
-    this.playlistItems = this.playlist.map((track, i) => {
+    // Music rows are built exactly once; the Ambient tab shows the
+    // compact mixer panel instead of a list, so nothing to build there.
+    this.itemsByCategory = {
+      music: this.buildCategoryItems("music"),
+    };
+
+    this.playlistEl.addEventListener("click", (e) => {
+      const row = e.target.closest(".playlist-item");
+      if (!row) return;
+      this.selectTrack("music", parseInt(row.dataset.index, 10));
+    });
+
+    // Tab switching: browsing only — the current sound keeps playing
+    this.tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => this.showTab(btn.dataset.category));
+    });
+
+    this.showTab(this.activeTab, { skipSave: true });
+  }
+
+  buildCategoryItems(category) {
+    const isAmbient = category === "ambient";
+    return this.libraries[category].map((track, i) => {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "playlist-item";
       item.setAttribute("role", "listitem");
       item.dataset.index = String(i);
+      item.dataset.category = category;
 
       const icon = document.createElement("span");
       icon.className = "playlist-item-icon";
       icon.innerHTML =
-        '<i class="fas fa-music icon-note"></i>' +
+        (isAmbient
+          ? '<span class="icon-note playlist-emoji">' + track.icon + "</span>"
+          : '<i class="fas fa-music icon-note"></i>') +
         '<span class="mini-eq"><i></i><i></i><i></i></span>';
 
       const text = document.createElement("span");
@@ -846,50 +1556,88 @@ class MusicPlayer {
       const title = document.createElement("span");
       title.className = "playlist-item-title";
       title.textContent = track.title;
-
-      const artist = document.createElement("span");
-      artist.className = "playlist-item-artist";
-      artist.textContent = track.artist || "";
-
       text.appendChild(title);
-      if (track.artist) text.appendChild(artist);
+
+      if (!isAmbient && track.artist) {
+        const artist = document.createElement("span");
+        artist.className = "playlist-item-artist";
+        artist.textContent = track.artist;
+        text.appendChild(artist);
+      }
+
       item.appendChild(icon);
       item.appendChild(text);
-      fragment.appendChild(item);
       return item;
     });
+  }
 
-    this.playlistEl.innerHTML = "";
-    this.playlistEl.appendChild(fragment);
+  /** Swap the visible category. Pure UI — playback is untouched. */
+  showTab(category, { skipSave = false } = {}) {
+    if (!this.libraries[category]) category = "music";
+    this.activeTab = category;
 
-    // One delegated listener for the whole list
-    this.playlistEl.addEventListener("click", (e) => {
-      const row = e.target.closest(".playlist-item");
-      if (!row) return;
-      const index = parseInt(row.dataset.index, 10);
-      if (index === this.trackIndex) {
-        this.togglePlay(); // tapping the current song toggles playback
-      } else {
-        this.switchTrack(index);
-      }
+    this.tabButtons.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.category === category);
     });
 
+    const ambient = category === "ambient";
+    this.playlistEl.hidden = ambient;
+    if (this.ambient.panelEl) this.ambient.panelEl.hidden = !ambient;
+
+    if (!ambient) {
+      const items = this.itemsByCategory.music;
+      this.playlistEl.replaceChildren(...items);
+      if (items.length === 0) {
+        const note = document.createElement("div");
+        note.className = "playlist-empty-note";
+        note.textContent = "Add tracks to the PLAYLIST array in script.js";
+        this.playlistEl.replaceChildren(note);
+      }
+    }
+
     if (this.countEl) {
-      const n = this.playlist.length;
-      this.countEl.textContent = n + (n === 1 ? " Song" : " Songs");
+      if (ambient) {
+        const on = this.ambient.active.size;
+        this.countEl.textContent =
+          on > 0
+            ? on + (on === 1 ? " Sound Active" : " Sounds Active")
+            : this.ambient.sounds.length + " Sounds";
+      } else {
+        const n = this.libraries.music.length;
+        this.countEl.textContent = n + (n === 1 ? " Song" : " Songs");
+      }
     }
 
     this.updateActiveItem();
+    if (!skipSave) this.saveState();
   }
 
-  /** Highlight the current track and keep it visible in the list */
+  /** A music row was tapped (ambient lives in its own panel/modal). */
+  selectTrack(category, index) {
+    if (!this.libraries.music[index]) return;
+    if (index === this.trackIndex) {
+      this.togglePlay();
+      return;
+    }
+    this.switchTrack(index);
+  }
+
+  /** Highlight the current music track; keep the header count live */
   updateActiveItem() {
-    if (!this.playlistItems) return;
-    this.playlistItems.forEach((item, i) => {
+    if (!this.itemsByCategory) return;
+    this.itemsByCategory.music.forEach((item, i) => {
       item.classList.toggle("active", i === this.trackIndex);
     });
-    const active = this.playlistItems[this.trackIndex];
-    if (active) active.scrollIntoView({ block: "nearest" });
+    if (this.activeTab === "music") {
+      const active = this.itemsByCategory.music[this.trackIndex];
+      if (active) active.scrollIntoView({ block: "nearest" });
+    } else if (this.countEl) {
+      const on = this.ambient.active.size;
+      this.countEl.textContent =
+        on > 0
+          ? on + (on === 1 ? " Sound Active" : " Sounds Active")
+          : this.ambient.sounds.length + " Sounds";
+    }
   }
 
   updatePlayIcon(isPlaying) {
@@ -937,6 +1685,7 @@ class MusicPlayer {
   saveState(includePosition = false) {
     const state = {
       trackIndex: this.trackIndex,
+      activeTab: this.activeTab,
       volume: this.volume,
       isMuted: this.isMuted,
       isShuffle: this.isShuffle,
@@ -965,6 +1714,10 @@ class MusicPlayer {
 
   loadState() {
     const s = this.readState();
+
+    if (s.activeTab && this.libraries[s.activeTab]) {
+      this.activeTab = s.activeTab;
+    }
     if (
       typeof s.trackIndex === "number" &&
       s.trackIndex >= 0 &&
@@ -1189,24 +1942,8 @@ class TaskManager {
   }
 
   triggerConfetti() {
-    for (let i = 0; i < 50; i++) {
-      const confetti = document.createElement("div");
-      confetti.className = "confetti";
-      confetti.style.left = Math.random() * 100 + "vw";
-      confetti.style.top = "-10px";
-      confetti.style.background = [
-        "var(--accent-primary)",
-        "var(--accent-hover)",
-        "#a855f7",
-        "#c084fc",
-      ][Math.floor(Math.random() * 4)];
-      confetti.style.width = Math.random() * 10 + 5 + "px";
-      confetti.style.height = Math.random() * 10 + 5 + "px";
-      confetti.style.borderRadius = "50%";
-
-      document.body.appendChild(confetti);
-      setTimeout(() => confetti.remove(), 2500);
-    }
+    // Burst from the completed Task Card, rendered above the whole UI
+    Celebration.burst(document.getElementById("taskPanel"));
   }
 
   escapeHtml(text) {
@@ -1938,7 +2675,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const timer = new PomodoroTimer();
   const taskManager = new TaskManager();
   const notificationManager = new NotificationManager(timer);
-  const musicPlayer = new MusicPlayer(PLAYLIST);
+  const musicPlayer = new MusicPlayer(PLAYLIST, AMBIENT_SOUNDS);
   const wallpaperManager = new WallpaperManager(LIVE_WALLPAPERS);
 
   // Integrate task manager with timer

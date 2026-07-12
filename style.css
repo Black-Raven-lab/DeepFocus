@@ -569,6 +569,7 @@ main {
   height: min(420px, calc(100vh - 9rem));
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* clean radius + no spill during collapse/expand */
   background: var(--card-bg);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
@@ -632,6 +633,32 @@ main {
 .player-header-count {
   font-size: 0.68rem;
   color: var(--text-tertiary);
+}
+
+/* Music player collapse — identical mechanics to the task panel */
+.music-player.collapsed {
+  height: 4rem;
+  overflow: hidden;
+}
+
+.player-playlist,
+.player-main {
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease;
+}
+
+.music-player.collapsed .player-playlist,
+.music-player.collapsed .player-main,
+.music-player.collapsed .ambient-panel,
+.music-player.collapsed .player-tabs {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.music-player.collapsed .player-header {
+  border-bottom-color: transparent;
 }
 
 /* Collapse chevron — mobile-only affordance, hidden on desktop */
@@ -702,6 +729,350 @@ main {
   50% {
     height: 100%;
   }
+}
+
+/* ---- Category tabs: Music / Ambient segmented control ---- */
+.player-tabs {
+  flex: none;
+  display: flex;
+  gap: 0.25rem;
+  padding: 3px;
+  margin-top: 0.6rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease;
+}
+
+.player-tab {
+  flex: 1;
+  padding: 0.32rem 0.4rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.player-tab:hover {
+  color: var(--text-secondary);
+}
+
+.player-tab.active {
+  background: var(--accent-soft);
+  color: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-glow) inset;
+}
+
+/* Ambient rows use emoji icons */
+.playlist-emoji {
+  font-size: 0.85rem;
+  line-height: 1;
+  font-style: normal;
+}
+
+.playlist-empty-note {
+  padding: 1rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* ---- Ambient panel: compact mixer, library lives in a modal ---- */
+.ambient-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.35rem 0;
+  overflow: hidden;
+}
+
+.ambient-panel[hidden] {
+  display: none;
+}
+
+/* In-card ambient library: the ONLY scrolling part of the panel.
+   Fills all flexible height — 4-6 rows visible on desktop. */
+.ambient-active-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.3rem;
+  margin-right: -0.3rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
+}
+
+.ambient-active-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ambient-active-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
+
+/* Compact sound rows (~36px): whole row toggles the sound */
+.ambient-active-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 36px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.55rem;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ambient-active-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+}
+
+.ambient-active-row.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-glow);
+}
+
+.ambient-row-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+  flex: none;
+}
+
+.ambient-row-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ambient-active-row.active .ambient-row-title {
+  color: var(--accent-color);
+}
+
+/* Live indicator: mini equalizer + Playing label on active rows */
+.ambient-row-live {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+}
+
+.ambient-active-row.active .ambient-row-live {
+  display: inline-flex;
+}
+
+.ambient-active-row .mini-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+}
+
+.ambient-active-row .mini-eq i {
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent-color);
+  height: 35%;
+}
+
+.ambient-active-row.audible .mini-eq i {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.ambient-active-row.audible .mini-eq i:nth-child(2) {
+  animation-duration: 0.65s;
+  animation-delay: 0.1s;
+}
+
+.ambient-active-row.audible .mini-eq i:nth-child(3) {
+  animation-duration: 1.05s;
+  animation-delay: 0.18s;
+}
+
+.ambient-row-playing {
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+}
+
+/* Advanced action (stop) appears only on hover/focus of active rows */
+.ambient-active-row .ambient-row-btn {
+  display: none;
+}
+
+.ambient-active-row.active:hover .ambient-row-btn,
+.ambient-active-row.active:focus-within .ambient-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Touch devices have no hover — keep the stop control reachable */
+@media (pointer: coarse) {
+  .ambient-active-row.active .ambient-row-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.ambient-row-btn {
+  flex: none;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.62rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 0.4rem;
+  line-height: 1;
+  transition: var(--transition);
+}
+
+.ambient-row-btn:hover {
+  color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ambient-row-remove:hover {
+  color: #f87171;
+}
+
+/* Master row: pause-all + one ambient volume — fixed, compact */
+.ambient-master {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ambient-master .slider {
+  flex: 1;
+}
+
+.ambient-strip-btn {
+  flex: none;
+  padding: 0.25rem;
+  font-size: 0.65rem;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
+}
+
+.ambient-strip-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Settings > Ambient Library: import + rename + remove */
+.ambient-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.3rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
+}
+
+.ambient-manage-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ambient-manage-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
+
+.ambient-manage-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ambient-manage-icon {
+  flex: none;
+  width: 1.4rem;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.ambient-manage-name {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.ambient-manage-remove {
+  flex: none;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  transition: var(--transition);
+}
+
+.ambient-manage-remove:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* Live dot on the Ambient tab while the mix is audible */
+.player-tab[data-category="ambient"] {
+  position: relative;
+}
+
+.music-player.ambient-playing .player-tab[data-category="ambient"]::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 6px var(--accent-glow-strong);
+}
+
+/* While ambient plays, the header equalizer runs */
+.music-player.ambient-playing .player-equalizer span {
+  opacity: 1;
+  animation: eq-bounce 1s ease-in-out infinite;
+}
+
+/* Ambient-only setup (no music tracks): hide music-only sections */
+.music-player.music-empty .now-playing,
+.music-player.music-empty .player-progress,
+.music-player.music-empty .player-controls,
+.music-player.music-empty .player-volume {
+  display: none;
 }
 
 /* ---- Playlist: the largest section, and the only one that scrolls ---- */
@@ -1377,6 +1748,7 @@ main {
   animation: slideInUp 0.5s ease-out 0.6s both;
   z-index: 100;
   transition: var(--transition);
+  overflow: hidden; /* no spill during collapse/expand */
 }
 
 .task-panel-header {
@@ -1390,18 +1762,31 @@ main {
   -webkit-user-select: none;
 }
 
-/* Collapsed: only the header bar remains visible (used as the grab bar
-   of the mobile bottom sheet, and as a minimize toggle on desktop) */
-.task-panel.collapsed .task-panel-content {
-  display: none;
-}
+/* ---- Collapse system: the whole card shrinks to its header ----
+   Both cards animate height between two definite values (expanded
+   formula -> compact header height) while the content fades out.
+   Content is faded + clipped rather than display:none so the
+   transition can run — it stays unfocusable via visibility. */
 
 .task-panel.collapsed {
-  height: auto;
+  height: 4rem; /* hugs the header — no empty glass below */
+  overflow: hidden;
+}
+
+.task-panel-content {
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease;
+}
+
+.task-panel.collapsed .task-panel-content {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .task-panel.collapsed .task-panel-header {
-  border-bottom: none;
+  border-bottom-color: transparent;
 }
 
 .task-panel.collapsed .task-panel-close i {
@@ -1735,17 +2120,22 @@ main {
 }
 
 /* Confetti Animation */
-.confetti {
+/* ---- Celebration layer: above EVERYTHING, clipped only by viewport.
+   Attached directly to <body>, so no card overflow, border-radius,
+   transform container, or stacking context can ever cut it off. ---- */
+.celebration-layer {
   position: fixed;
+  inset: 0;
   pointer-events: none;
-  animation: confettiFall 2.5s ease-out forwards;
+  overflow: hidden;
+  z-index: 9999;
 }
 
-@keyframes confettiFall {
-  to {
-    transform: translateY(100vh) rotate(360deg);
-    opacity: 0;
-  }
+.celebration-particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
 }
 
 /* ===================================================
@@ -1953,7 +2343,7 @@ main {
     max-width: none;
     animation: none;
     width: min(420px, calc(50% - 1.5rem));
-    height: auto;
+    height: 470px;
   }
 
   .music-player {
@@ -1970,7 +2360,9 @@ main {
 
   .task-panel {
     order: 3;
-    max-height: 470px; /* list scrolls internally past this */
+    /* definite height: the list scrolls inside, and collapsing can
+       animate (height: auto -> value can't tween) */
+    height: min(470px, 60vh);
   }
 
   .discord-card {
@@ -2127,14 +2519,22 @@ main {
 
   /* --- Music player: playlist-first internal layout --- */
   .music-player {
-    /* ~320px on small phones, up to 360px on tall ones */
-    height: clamp(320px, 52vh, 360px);
+    /* matches the task panel; +tabs row absorbed by the taller clamp */
+    height: clamp(340px, 55vh, 390px);
     padding: 0.85rem 0.9rem;
+  }
+
+  .player-tabs {
+    margin-top: 0.5rem;
+  }
+
+  .player-tab {
+    min-height: 30px;
   }
 
   /* Collapsible: header always visible, tap to expand/collapse */
   .player-header {
-    padding-bottom: 0.55rem;
+    padding-bottom: 0.5rem;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -2144,18 +2544,9 @@ main {
     display: block;
   }
 
+  /* Collapsed on mobile: maximum space saved, still easy to tap */
   .music-player.collapsed {
-    height: auto;
-  }
-
-  .music-player.collapsed .player-playlist,
-  .music-player.collapsed .player-main {
-    display: none;
-  }
-
-  .music-player.collapsed .player-header {
-    padding-bottom: 0;
-    border-bottom: none;
+    height: 3.5rem;
   }
 
   /* Compact header */
@@ -2176,26 +2567,55 @@ main {
   /* Playlist: the priority section — 3 rows small phones, 4-5 tall */
   .player-playlist {
     max-height: none;
-    gap: 0.25rem;
-    margin-top: 0.4rem;
-    margin-bottom: 0.4rem;
+    gap: 0.2rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
   }
 
   .playlist-item {
-    padding: 0.42rem 0.55rem;
+    padding: 0.4rem 0.55rem;
+    gap: 0.5rem;
   }
 
   .playlist-item-title {
-    font-size: 0.8rem;
+    font-size: 0.79rem;
+    line-height: 1.25;
   }
 
   .playlist-item-artist {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
+    line-height: 1.2;
   }
 
-  /* Now Playing collapses to one tight line: title — artist */
+  /* Now Playing collapses to one tight line: title — artist.
+     player-main becomes a two-column grid so the volume control sits
+     inline with the transport buttons instead of on its own row —
+     that whole row's height goes back to the playlist. */
   .player-main {
-    gap: 0.45rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.45rem 0.6rem;
+  }
+
+  .now-playing,
+  .player-progress {
+    grid-column: 1 / -1;
+  }
+
+  .player-controls {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+
+  .player-volume {
+    grid-column: 2;
+    gap: 0.3rem;
+  }
+
+  .player-volume .slider {
+    width: 56px;
+    flex: none;
   }
 
   .now-playing {
@@ -2228,12 +2648,14 @@ main {
 
   /* Controls: fixed at the bottom, tightened */
   .player-controls {
-    gap: clamp(0.6rem, 3.2vw, 1rem);
+    gap: 0.25rem;
   }
 
   .player-btn {
-    padding: 0.38rem;
-    font-size: 0.8rem;
+    padding: 0.35rem;
+    font-size: 0.78rem;
+    min-width: 2.4rem;
+    min-height: 2.4rem;
   }
 
   .player-btn-play {
@@ -2242,7 +2664,9 @@ main {
   }
 
   .player-volume .player-btn {
-    padding: 0.3rem;
+    padding: 0.25rem;
+    min-width: 2.2rem;
+    min-height: 2.2rem;
   }
 
   /* --- Task panel: list-first internal layout, matches the player --- */
@@ -2252,12 +2676,12 @@ main {
   }
 
   .task-panel.collapsed {
-    height: auto; /* fixed mobile height must not defeat collapsing */
+    height: 3.5rem; /* compact accordion bar, comfortably tappable */
   }
 
   /* Compact fixed sections: header, progress, input, footer */
   .task-panel-header {
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 1rem;
   }
 
   .task-panel-title {
@@ -2265,8 +2689,8 @@ main {
   }
 
   .task-panel-content {
-    padding: 0.7rem 0.85rem 0.8rem;
-    gap: 0.6rem;
+    padding: 0.65rem 0.8rem 0.75rem;
+    gap: 0.55rem;
   }
 
   .task-progress {
@@ -2294,7 +2718,11 @@ main {
   }
 
   .task-item {
-    padding: 0.5rem 0.6rem;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .task-list {
+    gap: 0.4rem;
   }
 
   .task-panel-footer {
@@ -2302,7 +2730,7 @@ main {
 
   .task-footer-btn {
     font-size: 0.72rem;
-    padding: 0.45rem 0.5rem;
+    padding: 0.4rem 0.5rem;
   }
 
   /* Input row: full-width field + square Add button, never clipped */
@@ -2334,8 +2762,11 @@ main {
     gap: 0.5rem;
   }
 
+  /* Subtitle always stays visible — scaled down, never hidden */
   .logo-subtitle {
-    display: none; /* keeps the logo itself readable in the tight row */
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
   }
 
   .session-tabs {
@@ -2410,7 +2841,13 @@ main {
   }
 
   .player-controls {
-    gap: 0.7rem;
+    gap: 0.2rem;
+  }
+
+  /* Narrowest phones: the inline slider doesn't fit — the mute button
+     stays, and volume remains adjustable from Settings */
+  .player-volume .slider {
+    display: none;
   }
 
   .task-footer-btn {
