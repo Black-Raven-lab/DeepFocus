@@ -425,23 +425,6 @@
               <select id="builtinWallpaperSelect" class="form-select"></select>
             </div>
 
-            <!-- Upload Video -->
-            <div class="settings-group">
-              <label for="wallpaperUploadInput" class="settings-label">
-                <i class="fas fa-upload"></i>
-                Upload Your Own Video
-              </label>
-              <input
-                type="file"
-                id="wallpaperUploadInput"
-                class="form-control"
-                accept="video/mp4,video/webm"
-              />
-              <small class="settings-hint">
-                MP4 or WebM. Uploaded videos last until the page reloads.
-              </small>
-            </div>
-
             <!-- Background Audio -->
             <div class="settings-group">
               <div class="form-check">
@@ -494,9 +477,6 @@
               />
             </div>
 
-            <!-- ============ Ambient Library ============ -->
-            <hr class="settings-divider" />
-
             <!-- Blur -->
             <div class="settings-group">
               <label for="wallpaperBlurSlider" class="settings-label">
@@ -512,6 +492,110 @@
                 max="20"
                 value="0"
               />
+            </div>
+
+            <!-- Wallpaper Position (per wallpaper, per screen size) -->
+            <div class="settings-group">
+              <label class="settings-label">
+                <i class="fas fa-arrows-alt"></i>
+                Wallpaper Position
+                <span class="settings-value" id="wallpaperPositionMode"
+                  >Desktop</span
+                >
+              </label>
+
+              <label class="settings-sublabel" for="wallpaperPosX">
+                Horizontal
+                <span class="settings-value" id="wallpaperPosXValue">50%</span>
+              </label>
+              <input
+                type="range"
+                id="wallpaperPosX"
+                class="form-range"
+                min="0"
+                max="100"
+                value="50"
+              />
+
+              <label class="settings-sublabel" for="wallpaperPosY">
+                Vertical
+                <span class="settings-value" id="wallpaperPosYValue">50%</span>
+              </label>
+              <input
+                type="range"
+                id="wallpaperPosY"
+                class="form-range"
+                min="0"
+                max="100"
+                value="50"
+              />
+
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="wallpaperPosReset"
+              >
+                Reset Position
+              </button>
+              <small class="settings-hint">
+                Fine-tune where the current wallpaper is framed on this screen
+                size. Each wallpaper remembers its own desktop and mobile
+                position.
+              </small>
+            </div>
+
+            <!-- ============ Music Library ============ -->
+            <hr class="settings-divider" />
+            <div class="settings-section-title">
+              <i class="fas fa-music"></i>
+              Music Library
+            </div>
+
+            <div class="settings-group">
+              <label for="musicImportInput" class="settings-label">
+                <i class="fas fa-file-import"></i>
+                Import Music (MP3)
+              </label>
+              <input
+                type="file"
+                id="musicImportInput"
+                class="form-control"
+                accept="audio/mpeg,audio/mp3,audio/*"
+                multiple
+              />
+              <small class="settings-hint">
+                Imported songs appear in the Music playlist and last until the
+                page reloads.
+              </small>
+            </div>
+
+            <div class="settings-group">
+              <label class="settings-label">
+                <i class="fas fa-sliders-h"></i>
+                Manage Music
+              </label>
+              <div class="ambient-manage-list" id="musicManageList"></div>
+              <small class="settings-hint">
+                Rename or delete your imported songs.
+              </small>
+            </div>
+
+            <!-- ============ Ambient Library ============ -->
+            <hr class="settings-divider" />
+            <div class="settings-section-title">
+              <i class="fas fa-leaf"></i>
+              Ambient Library
+            </div>
+
+            <div class="settings-group">
+              <label class="settings-label">
+                <i class="fas fa-sliders-h"></i>
+                Ambient Sounds
+              </label>
+              <div class="ambient-manage-list" id="ambientManageList"></div>
+              <small class="settings-hint">
+                Built-in nature sounds — part of the application.
+              </small>
             </div>
           </div>
           <div class="modal-footer">

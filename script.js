@@ -492,32 +492,33 @@ class PomodoroTimer {
  */
 const PLAYLIST = [
   {
-    title: "暗裏著迷 - Themes",
-    artist: "Andy Lau",
+    title: "Night lofi playlist • lofi music | chill beats to relax/study",
+    artist: "HITO",
     src: "assets/sounds/music1.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "半點心",
-    artist: "Grasshopper",
+    title: "Chill Songs | Cozy & Relaxing Music for a Peaceful Day ",
+    artist: "Lofi Playlist",
     src: "assets/sounds/music2.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "Tian Mi Mi",
-    artist: "Teresa Teng",
+    title: "Quiet Time with God: 1 Hour Instrumental Worship | Prayer Music",
+    artist: "Serene Sessions",
     src: "assets/sounds/music3.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "DJ Xuân Đình Tuyết Remix (0.9x)",
-    artist: "Your Eyes - Joey Pecoraro",
+    title:
+      "Demon Slayer Infinity castle Movie OST: Akaza's Backstory Theme | Emotional Version",
+    artist: "Tsuyu 愛",
     src: "assets/sounds/music4.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "l月亮代表我的心",
-    artist: "Teresa Teng",
+    title: "Night lofi playlist • lofi music | chill beats to relax/study",
+    artist: "HITO",
     src: "assets/sounds/music5.mp3",
     cover: "music-pic.jpg",
   },
@@ -542,17 +543,21 @@ const PLAYLIST = [
 const LIVE_WALLPAPERS = [
   {
     name: "Blue Sky",
-    src: "assets/images/Live-Wallpapers/lwp1-Blue_Sky.mp4",
+    desktop: "assets/images/Live-Wallpapers/lwp1-Blue_Sky.mp4",
+    mobile: "assets/images/Live-Wallpapers/lwp1-Blue_Sky_Mobile.MP4",
     accent: "#22D3EE",
   },
   {
     name: "Calm Forest",
-    src: "assets/images/Live-Wallpapers/lwp2-Calm_Forest.mp4",
+    desktop: "assets/images/Live-Wallpapers/lwp2-Calm_Forest.mp4",
+    mobile: "assets/images/Live-Wallpapers/lwp2-Calm_Forest_Mobile.MP4",
     accent: "#59C173",
   },
   {
     name: "Hidden Garden Temple",
-    src: "assets/images/Live-Wallpapers/lwp3-Hidden_Garden_Temple.mp4",
+    desktop: "assets/images/Live-Wallpapers/lwp3-Hidden_Garden_Temple.mp4",
+    mobile:
+      "assets/images/Live-Wallpapers/lwp3-Hidden_Garden_Temple_Mobile.MP4",
     accent: "#8BC34A",
   },
 ];
@@ -661,7 +666,7 @@ const AMBIENT_SOUNDS = [
     id: "crickets",
     title: "Night Crickets",
     icon: "\u{1F303}",
-    file: "assets/ambients/crikets.mp3",
+    file: "assets/ambients/crickets.mp3",
     loop: true,
   },
   {
@@ -720,17 +725,14 @@ class AmbientPlayer {
   static STORAGE_KEY = "deepFocusAmbient";
 
   constructor(sounds, { onChange } = {}) {
-    // Library pipeline: built-ins minus user removals, plus imported
-    // files, with rename overrides — recomputed by rebuildSounds()
-    this.baseSounds = (Array.isArray(sounds) ? sounds : []).map((s) => ({
+    // Ambient sounds are built-in application content — the library
+    // is fixed; users play and mix them, never edit them
+    this.sounds = (Array.isArray(sounds) ? sounds : []).map((s) => ({
       id: s.id,
       title: s.title,
       icon: s.icon,
       src: s.file,
     }));
-    this.imported = []; // session-only (object URLs)
-    this.removedIds = new Set();
-    this.renames = {};
     this.onChange = typeof onChange === "function" ? onChange : () => {};
 
     // Element pool: the static #ambientPlayer element is slot 0;
@@ -744,29 +746,19 @@ class AmbientPlayer {
     this.toggleBtn = document.getElementById("ambientToggleBtn");
     this.volumeSlider = document.getElementById("ambientVolumeSlider");
     this.playerCard = document.getElementById("musicPlayer");
-    // Settings-page management UI
+    // Settings-page list (read-only: built-in assets)
     this.manageListEl = document.getElementById("ambientManageList");
-    this.importInput = document.getElementById("ambientImportInput");
 
     this.volume = 0.5; // master ambient volume — independent of music
     this.retryOnGesture = false;
 
     if (!seed || !this.panelEl) return;
 
-    this.loadState(); // renames/removals must exist before building
-    this.rebuildSounds();
+    this.loadState();
     this.buildLibrary();
     this.renderManageList();
     this.initEventListeners();
     this.restore();
-  }
-
-  /** Recompute the effective library from base + user customization */
-  rebuildSounds() {
-    this.sounds = [
-      ...this.baseSounds.filter((s) => !this.removedIds.has(s.id)),
-      ...this.imported,
-    ].map((s) => ({ ...s, title: this.renames[s.id] || s.title }));
   }
 
   /* ---------- Element pool ---------- */
@@ -814,31 +806,6 @@ class AmbientPlayer {
       const id = row.dataset.id;
       this.active.has(id) ? this.remove(id) : this.add(id);
     });
-
-    // Settings: import MP3s (instant, session-bound object URLs)
-    if (this.importInput) {
-      this.importInput.addEventListener("change", () => {
-        this.importFiles(this.importInput.files);
-        this.importInput.value = "";
-      });
-    }
-
-    // Settings: rename (inline inputs) and remove (delegated)
-    if (this.manageListEl) {
-      this.manageListEl.addEventListener("click", (e) => {
-        const btn = e.target.closest(".ambient-manage-remove");
-        if (!btn) return;
-        this.removeSound(btn.closest(".ambient-manage-row").dataset.id);
-      });
-      this.manageListEl.addEventListener("change", (e) => {
-        const input = e.target.closest(".ambient-manage-name");
-        if (!input) return;
-        this.renameSound(
-          input.closest(".ambient-manage-row").dataset.id,
-          input.value.trim(),
-        );
-      });
-    }
   }
 
   buildLibrary() {
@@ -993,85 +960,31 @@ class AmbientPlayer {
     this.onChange();
   }
 
-  /* ---------- Library management (Settings page) ---------- */
+  /* ---------- Settings list (read-only, built-in assets) ---------- */
 
-  /** Import MP3s as session sounds — playable and mixable instantly */
-  importFiles(fileList) {
-    const files = Array.from(fileList || []).filter((f) =>
-      f.type.startsWith("audio"),
-    );
-    if (files.length === 0) return;
-    files.forEach((file, i) => {
-      this.imported.push({
-        id: "import-" + Date.now() + "-" + i,
-        title: file.name.replace(/\.[^.]+$/, ""),
-        icon: "\u{1F3A7}",
-        src: URL.createObjectURL(file),
-      });
-    });
-    this.rebuildLibraryUI();
-  }
-
-  /** Remove a sound from the library (stops it first if active) */
-  removeSound(id) {
-    if (this.active.has(id)) this.remove(id);
-    const importedIdx = this.imported.findIndex((s) => s.id === id);
-    if (importedIdx >= 0) {
-      URL.revokeObjectURL(this.imported[importedIdx].src);
-      this.imported.splice(importedIdx, 1);
-    } else {
-      this.removedIds.add(id); // built-ins: persisted removal
-    }
-    delete this.renames[id];
-    this.rebuildLibraryUI();
-  }
-
-  renameSound(id, name) {
-    if (!name) return;
-    this.renames[id] = name;
-    this.rebuildLibraryUI();
-  }
-
-  rebuildLibraryUI() {
-    this.rebuildSounds();
-    this.buildLibrary();
-    this.renderManageList();
-    this.saveState();
-    this.onChange(); // header counts etc. stay live
-  }
-
-  /** Settings page list: icon, inline-rename input, remove button */
+  /** Icon + name only — no rename, no delete */
   renderManageList() {
     if (!this.manageListEl) return;
     const fragment = document.createDocumentFragment();
     this.sounds.forEach((s) => {
       const row = document.createElement("div");
       row.className = "ambient-manage-row";
-      row.dataset.id = s.id;
 
       const icon = document.createElement("span");
       icon.className = "ambient-manage-icon";
       icon.textContent = s.icon;
 
-      const name = document.createElement("input");
-      name.type = "text";
-      name.className = "form-control ambient-manage-name";
-      name.value = s.title;
-      name.setAttribute("aria-label", "Sound name");
+      const name = document.createElement("span");
+      name.className = "ambient-manage-name-static";
+      name.textContent = s.title;
 
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "ambient-manage-remove";
-      removeBtn.title = "Remove sound";
-      removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-
-      row.append(icon, name, removeBtn);
+      row.append(icon, name);
       fragment.appendChild(row);
     });
     this.manageListEl.replaceChildren(fragment);
   }
 
-  /* ---------- Persistence ---------- */
+  /* ---------- Persistence ---------- */ /* ---------- Persistence ---------- */
 
   saveState() {
     try {
@@ -1081,8 +994,6 @@ class AmbientPlayer {
           activeIds: [...this.active.keys()],
           volume: this.volume,
           wasPlaying: this.isPlaying,
-          removedIds: [...this.removedIds],
-          renames: this.renames,
         }),
       );
     } catch (_) {
@@ -1102,13 +1013,7 @@ class AmbientPlayer {
         } else if (s.soundId) {
           this.savedIds = [s.soundId]; // migrate single-sound saves
         }
-        this.wasPlaying = !!s.wasPlaying;
-        if (Array.isArray(s.removedIds)) {
-          this.removedIds = new Set(s.removedIds);
-        }
-        if (s.renames && typeof s.renames === "object") {
-          this.renames = s.renames;
-        }
+        this.wasPlaying = !!s.wasPlaying; // legacy removedIds/renames ignored
       }
     } catch (_) {
       /* corrupted storage — keep defaults */
@@ -1147,8 +1052,11 @@ class MusicPlayer {
     this.ambient = new AmbientPlayer(ambientSounds, {
       onChange: () => this.updateActiveItem(),
     });
+    // Music is user content: the coded PLAYLIST plus session imports
+    this.baseTracks = Array.isArray(playlist) ? playlist : [];
+    this.importedTracks = []; // session-only (object URLs)
     this.libraries = {
-      music: Array.isArray(playlist) ? playlist : [],
+      music: [...this.baseTracks],
       ambient: this.ambient.sounds, // for row rendering only
     };
     this.activeTab = "music";
@@ -1170,6 +1078,9 @@ class MusicPlayer {
     this.playlistEl = document.getElementById("playerPlaylist");
     this.countEl = document.getElementById("playlistCount");
     this.tabButtons = Array.from(document.querySelectorAll(".player-tab"));
+    // Settings > Music Library management UI
+    this.musicImportInput = document.getElementById("musicImportInput");
+    this.musicManageEl = document.getElementById("musicManageList");
     this.titleEl = document.getElementById("songTitle");
     this.artistEl = document.getElementById("songArtist");
     this.currentTimeEl = document.getElementById("currentTimeLabel");
@@ -1198,6 +1109,8 @@ class MusicPlayer {
 
     this.loadState();
     this.renderPlaylist(); // built once — items are reused, never recreated
+    this.renderMusicManageList();
+    this.initMusicLibraryListeners();
     this.initEventListeners();
     if (this.playlist.length > 0) {
       this.loadTrack(this.trackIndex, { resumePosition: true });
@@ -1509,6 +1422,155 @@ class MusicPlayer {
    * delegated click listener handles every row, so large playlists
    * stay cheap to render and scroll.
    */
+  /* ---------- Music Library (Settings page) ---------- */
+
+  initMusicLibraryListeners() {
+    if (this.musicImportInput) {
+      this.musicImportInput.addEventListener("change", () => {
+        this.importMusic(this.musicImportInput.files);
+        this.musicImportInput.value = "";
+      });
+    }
+    if (this.musicManageEl) {
+      this.musicManageEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".ambient-manage-remove");
+        if (!btn) return;
+        this.deleteImported(btn.closest(".ambient-manage-row").dataset.id);
+      });
+      this.musicManageEl.addEventListener("change", (e) => {
+        const input = e.target.closest(".ambient-manage-name");
+        if (!input) return;
+        this.renameImported(
+          input.closest(".ambient-manage-row").dataset.id,
+          input.value.trim(),
+        );
+      });
+    }
+  }
+
+  /** Import MP3s into the Music playlist (session object URLs) */
+  importMusic(fileList) {
+    const files = Array.from(fileList || []).filter((f) =>
+      f.type.startsWith("audio"),
+    );
+    if (files.length === 0) return;
+    files.forEach((file, i) => {
+      this.importedTracks.push({
+        id: "music-import-" + Date.now() + "-" + i,
+        title: file.name.replace(/\.[^.]+$/, ""),
+        artist: "Imported",
+        src: URL.createObjectURL(file),
+      });
+    });
+    this.rebuildMusicLibrary();
+  }
+
+  deleteImported(id) {
+    const idx = this.importedTracks.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    const wasCurrent =
+      this.playlist[this.trackIndex] === this.importedTracks[idx];
+    URL.revokeObjectURL(this.importedTracks[idx].src);
+    this.importedTracks.splice(idx, 1);
+    this.rebuildMusicLibrary({ currentRemoved: wasCurrent });
+  }
+
+  renameImported(id, name) {
+    if (!name) return;
+    const track = this.importedTracks.find((t) => t.id === id);
+    if (!track) return;
+    track.title = name;
+    this.rebuildMusicLibrary();
+  }
+
+  /** Recompose the playlist and refresh every dependent UI piece,
+   *  keeping the currently playing track (and playback) intact */
+  rebuildMusicLibrary({ currentRemoved = false } = {}) {
+    const current = currentRemoved ? null : this.playlist[this.trackIndex];
+
+    this.libraries.music = [...this.baseTracks, ...this.importedTracks];
+    this.playlist = this.libraries.music;
+
+    this.history = []; // shuffle history indexes are stale now
+
+    // Re-locate the playing track in the recomposed list
+    const found = current ? this.playlist.indexOf(current) : -1;
+    if (found >= 0) {
+      this.trackIndex = found; // same song object — playback untouched
+    } else {
+      this.trackIndex = 0;
+      if (currentRemoved && this.playlist.length > 0) {
+        this.loadTrack(0); // deleted the playing song: load the first
+      }
+    }
+
+    // First import into an empty Music library revives the player
+    if (
+      this.playlist.length > 0 &&
+      this.playerEl.classList.contains("music-empty")
+    ) {
+      this.playerEl.classList.remove("music-empty");
+      this.loadTrack(0);
+    } else if (this.playlist.length === 0) {
+      this.playerEl.classList.add("music-empty");
+      this.audio.pause();
+    }
+
+    // Rebuild the playlist rows (library actually changed) + settings
+    this.itemsByCategory.music = this.buildCategoryItems("music");
+    if (this.activeTab === "music") {
+      this.playlistEl.replaceChildren(...this.itemsByCategory.music);
+    }
+    this.showTab(this.activeTab, { skipSave: true });
+    this.renderMusicManageList();
+
+    // Update Now Playing text in case the current track was renamed
+    const track = this.playlist[this.trackIndex];
+    if (track) {
+      this.titleEl.textContent = track.title;
+      this.artistEl.textContent = track.artist || "";
+    }
+    this.saveState();
+  }
+
+  /** Settings list: imported songs only — rename inline, delete */
+  renderMusicManageList() {
+    if (!this.musicManageEl) return;
+    if (this.importedTracks.length === 0) {
+      const note = document.createElement("div");
+      note.className = "ambient-manage-empty";
+      note.textContent = "No imported songs yet.";
+      this.musicManageEl.replaceChildren(note);
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    this.importedTracks.forEach((t) => {
+      const row = document.createElement("div");
+      row.className = "ambient-manage-row";
+      row.dataset.id = t.id;
+
+      const icon = document.createElement("span");
+      icon.className = "ambient-manage-icon";
+      icon.textContent = "\u{1F3B5}";
+
+      const name = document.createElement("input");
+      name.type = "text";
+      name.className = "form-control ambient-manage-name";
+      name.value = t.title;
+      name.setAttribute("aria-label", "Song name");
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "ambient-manage-remove";
+      removeBtn.title = "Delete song";
+      removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+
+      row.append(icon, name, removeBtn);
+      fragment.appendChild(row);
+    });
+    this.musicManageEl.replaceChildren(fragment);
+  }
+
   renderPlaylist() {
     if (!this.playlistEl) return;
 
@@ -2330,7 +2392,6 @@ class WallpaperManager {
 
     // Settings controls
     this.builtinSelect = document.getElementById("builtinWallpaperSelect");
-    this.uploadInput = document.getElementById("wallpaperUploadInput");
     this.audioToggle = document.getElementById("wallpaperAudioToggle");
     this.brightnessSlider = document.getElementById(
       "wallpaperBrightnessSlider",
@@ -2341,6 +2402,19 @@ class WallpaperManager {
     this.overlayValue = document.getElementById("wallpaperOverlayValue");
     this.blurValue = document.getElementById("wallpaperBlurValue");
 
+    // Wallpaper position controls (Settings)
+    this.posXSlider = document.getElementById("wallpaperPosX");
+    this.posYSlider = document.getElementById("wallpaperPosY");
+    this.posXValue = document.getElementById("wallpaperPosXValue");
+    this.posYValue = document.getElementById("wallpaperPosYValue");
+    this.posModeLabel = document.getElementById("wallpaperPositionMode");
+    this.posResetBtn = document.getElementById("wallpaperPosReset");
+
+    // Desktop vs mobile framing switches with this query — reacting to
+    // the change event also covers phone rotation and window resizing
+    this.mobileMQ = window.matchMedia("(max-width: 767px)");
+    this.appliedPosition = null;
+
     if (!this.video || !this.layer) return;
 
     this.settings = {
@@ -2349,10 +2423,11 @@ class WallpaperManager {
       overlay: 20, // %
       blur: 0, // px
       audio: false, // wallpaper sound off by default
+      // Per-wallpaper, per-screen-size position overrides:
+      // { [wallpaperKey]: { desktop: "x% y%", mobile: "x% y%" } }
+      positions: {},
     };
 
-    this.customUrl = null; // object URL of an uploaded video
-    this.usingCustom = false; // uploaded video active this session
     this.retryOnGesture = false; // autoplay blocked, retry on tap
     this.failedSrcs = new Set(); // sources that errored (loop guard)
     this.fadeTimeout = null;
@@ -2374,21 +2449,38 @@ class WallpaperManager {
       if (saved && typeof saved === "object") {
         // "mode" from older versions is intentionally ignored —
         // the system is live-wallpaper-only now
-        const { builtinIndex, brightness, overlay, blur, audio } = saved;
+        const {
+          wallpaper,
+          builtinIndex,
+          brightness,
+          overlay,
+          blur,
+          audio,
+          positions,
+        } = saved;
+        // Preferred: resolve the stored wallpaper name to an index;
+        // legacy saves with a raw index still load
+        let index;
+        if (wallpaper) {
+          const i = this.wallpapers.findIndex((wp) => wp.name === wallpaper);
+          if (i >= 0) index = i;
+        }
+        if (index === undefined && Number.isFinite(builtinIndex)) {
+          index = builtinIndex;
+        }
         this.settings = {
           ...this.settings,
-          ...(Number.isFinite(builtinIndex) && { builtinIndex }),
+          ...(index !== undefined && { builtinIndex: index }),
           ...(Number.isFinite(brightness) && { brightness }),
           ...(Number.isFinite(overlay) && { overlay }),
           ...(Number.isFinite(blur) && { blur }),
           ...(typeof audio === "boolean" && { audio }),
+          ...(positions && typeof positions === "object" && { positions }),
         };
       }
     } catch (_) {
       /* corrupted storage — keep defaults */
     }
-    // Uploads are session-bound (object URLs), so persisted choice is
-    // always one of the built-ins
     this.settings.builtinIndex = Math.min(
       Math.max(0, this.settings.builtinIndex || 0),
       Math.max(0, this.wallpapers.length - 1),
@@ -2397,9 +2489,13 @@ class WallpaperManager {
 
   saveSettings() {
     try {
+      // Only the wallpaper NAME is stored — the desktop/mobile variant
+      // is always decided automatically at load time
+      const wp = this.wallpapers[this.settings.builtinIndex];
+      const { builtinIndex, ...rest } = this.settings;
       localStorage.setItem(
         WallpaperManager.STORAGE_KEY,
-        JSON.stringify(this.settings),
+        JSON.stringify({ ...rest, wallpaper: wp ? wp.name : null }),
       );
     } catch (_) {
       /* storage unavailable — ignore */
@@ -2430,19 +2526,6 @@ class WallpaperManager {
   initEventListeners() {
     this.builtinSelect.addEventListener("change", () => {
       this.settings.builtinIndex = parseInt(this.builtinSelect.value, 10) || 0;
-      this.usingCustom = false;
-      this.apply();
-      this.saveSettings();
-    });
-
-    // Upload: instant preview via object URL
-    this.uploadInput.addEventListener("change", () => {
-      const file = this.uploadInput.files && this.uploadInput.files[0];
-      if (!file) return;
-      if (this.customUrl) URL.revokeObjectURL(this.customUrl);
-      this.customUrl = URL.createObjectURL(file);
-      this.usingCustom = true;
-      this.failedSrcs.delete(this.customUrl);
       this.apply();
       this.saveSettings();
     });
@@ -2474,6 +2557,52 @@ class WallpaperManager {
       this.saveSettings();
     });
 
+    // Position sliders: preview updates immediately, saved per
+    // wallpaper and per screen-size profile
+    const onPosInput = () => {
+      const pos = this.posXSlider.value + "% " + this.posYSlider.value + "%";
+      const key = this.wallpaperKey();
+      if (!this.settings.positions[key]) this.settings.positions[key] = {};
+      this.settings.positions[key][this.positionMode()] = pos;
+      this.applyPosition();
+      this.updatePositionLabels();
+      this.saveSettings();
+    };
+    if (this.posXSlider && this.posYSlider) {
+      this.posXSlider.addEventListener("input", onPosInput);
+      this.posYSlider.addEventListener("input", onPosInput);
+    }
+    if (this.posResetBtn) {
+      this.posResetBtn.addEventListener("click", () => {
+        const key = this.wallpaperKey();
+        if (this.settings.positions[key]) {
+          delete this.settings.positions[key][this.positionMode()];
+          if (Object.keys(this.settings.positions[key]).length === 0) {
+            delete this.settings.positions[key];
+          }
+        }
+        this.applyPosition();
+        this.syncPositionControls();
+        this.saveSettings();
+      });
+    }
+
+    // Crossing the mobile breakpoint (resize/rotation): switch to the
+    // correct video variant. The event only fires when the device
+    // category actually changes, and setSource() no-ops when the
+    // resolved source is identical — no unnecessary reloads.
+    const onMQChange = () => {
+      this.applyPosition();
+      this.syncPositionControls();
+      const src = this.currentSrc();
+      if (src) this.setSource(src); // fades, keeps looping, auto-plays
+    };
+    if (this.mobileMQ.addEventListener) {
+      this.mobileMQ.addEventListener("change", onMQChange);
+    } else if (this.mobileMQ.addListener) {
+      this.mobileMQ.addListener(onMQChange); // older Safari
+    }
+
     // A wallpaper that can't load falls back to the default built-in —
     // the background must never end up blank
     this.video.addEventListener("error", () => this.handleVideoFailure());
@@ -2488,12 +2617,28 @@ class WallpaperManager {
     });
   }
 
-  /* ---------- Source selection ---------- */
+  /* ---------- Source selection (automatic desktop/mobile variant) ---------- */
+
+  /** Preference order for the current screen. Mobile screens try the
+   *  portrait video first, then the landscape one; desktop screens use
+   *  the landscape video (a failure there falls to another wallpaper,
+   *  per the failure-handling contract). */
+  variantChain(wp) {
+    return this.mobileMQ.matches
+      ? [wp.mobile, wp.desktop]
+      : [wp.desktop, wp.mobile];
+  }
+
+  /** First variant of a wallpaper that hasn't failed this session */
+  srcFor(wp) {
+    if (!wp) return null;
+    return (
+      this.variantChain(wp).find((s) => s && !this.failedSrcs.has(s)) || null
+    );
+  }
 
   currentSrc() {
-    if (this.usingCustom && this.customUrl) return this.customUrl;
-    const wp = this.wallpapers[this.settings.builtinIndex];
-    return wp ? wp.src : null;
+    return this.srcFor(this.wallpapers[this.settings.builtinIndex]);
   }
 
   /* ---------- Visual variables ---------- */
@@ -2517,10 +2662,12 @@ class WallpaperManager {
 
   /* ---------- Application ---------- */
 
-  /** Full state application: visuals + accent + video source */
+  /** Full state application: visuals + accent + framing + source */
   apply() {
     this.applyVisualVars();
     this.applyAccent();
+    this.applyPosition();
+    this.syncPositionControls();
 
     const src = this.currentSrc();
     if (!src) return; // nothing configured — dark base stays visible
@@ -2549,6 +2696,7 @@ class WallpaperManager {
       this.layer.classList.remove("switching");
       this.layer.classList.add("active");
       this.playCurrent();
+      this.prefetchNext(); // browser-idle hint, not a second video
     };
 
     if (firstLoad) {
@@ -2558,6 +2706,26 @@ class WallpaperManager {
       this.layer.classList.add("switching");
       this.fadeTimeout = setTimeout(swap, WallpaperManager.FADE_MS);
     }
+  }
+
+  /** Low-priority prefetch hint for the next wallpaper in the list —
+   *  a <link rel=prefetch>, never a second video element */
+  prefetchNext() {
+    if (this.wallpapers.length < 2) return;
+    const next =
+      this.wallpapers[
+        (this.settings.builtinIndex + 1) % this.wallpapers.length
+      ];
+    const src = this.srcFor(next);
+    if (!src) return;
+    this.prefetched = this.prefetched || new Set();
+    if (this.prefetched.has(src)) return;
+    this.prefetched.add(src);
+    const link = document.createElement("link");
+    link.rel = "prefetch";
+    link.as = "video";
+    link.href = src;
+    document.head.appendChild(link);
   }
 
   playCurrent() {
@@ -2596,32 +2764,108 @@ class WallpaperManager {
     const failed = this.video.getAttribute("src");
     if (failed) this.failedSrcs.add(failed);
 
-    // Find the first built-in that hasn't already failed
-    const fallback = this.wallpapers.find((wp) => !this.failedSrcs.has(wp.src));
-    if (!fallback) {
+    // 1) Same wallpaper, other variant (mobile -> desktop typically):
+    //    srcFor() skips failed sources, so if anything is left for the
+    //    selected wallpaper, keep the user's selection
+    if (this.currentSrc()) {
+      this.apply();
+      return;
+    }
+
+    // 2) Otherwise: first wallpaper with any working variant (default
+    //    built-in first) — the background must never end up blank
+    const index = this.wallpapers.findIndex((wp) => this.srcFor(wp));
+    if (index === -1) {
       // Everything failed — hide the video, keep the dark base
       this.layer.classList.remove("active", "switching");
       this.video.pause();
       return;
     }
 
-    const index = this.wallpapers.indexOf(fallback);
-    this.usingCustom = false;
     this.settings.builtinIndex = index;
     this.syncControls();
     this.apply();
     this.saveSettings();
   }
 
+  /* ---------- Wallpaper position (desktop vs mobile framing) ---------- */
+
+  positionMode() {
+    return this.mobileMQ.matches ? "mobile" : "desktop";
+  }
+
+  /** Stable identity for the current wallpaper's saved positions —
+   *  the name, so desktop and mobile variants share one identity */
+  wallpaperKey() {
+    const wp = this.wallpapers[this.settings.builtinIndex];
+    return wp ? wp.name : "none";
+  }
+
+  /** Effective position: user override -> wallpaper profile -> center */
+  currentPositionValue() {
+    const key = this.wallpaperKey();
+    const mode = this.positionMode();
+    const override =
+      this.settings.positions[key] && this.settings.positions[key][mode];
+    if (override) return override;
+    const wp = this.wallpapers[this.settings.builtinIndex];
+    if (wp) {
+      const profile =
+        mode === "mobile" ? wp.mobilePosition : wp.desktopPosition;
+      if (profile) return profile;
+    }
+    return "center center";
+  }
+
+  /** Only touches the style when the value actually changes (perf) */
+  applyPosition() {
+    const pos = this.currentPositionValue();
+    if (pos === this.appliedPosition) return;
+    this.appliedPosition = pos;
+    this.video.style.objectPosition = pos;
+  }
+
+  /** "60% center" / "left top" -> numeric slider values */
+  parsePosition(pos) {
+    const words = { left: 0, top: 0, center: 50, right: 100, bottom: 100 };
+    const parts = String(pos).trim().split(/\s+/);
+    const num = (v, fallback) => {
+      if (v in words) return words[v];
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : fallback;
+    };
+    return {
+      x: num(parts[0] || "center", 50),
+      y: num(parts[1] || "center", 50),
+    };
+  }
+
+  /** Point the sliders at the current wallpaper + screen-size profile */
+  syncPositionControls() {
+    if (!this.posXSlider || !this.posYSlider) return;
+    const { x, y } = this.parsePosition(this.currentPositionValue());
+    this.posXSlider.value = String(Math.round(x));
+    this.posYSlider.value = String(Math.round(y));
+    if (this.posModeLabel) {
+      this.posModeLabel.textContent =
+        this.positionMode() === "mobile" ? "Mobile" : "Desktop";
+    }
+    this.updatePositionLabels();
+  }
+
+  updatePositionLabels() {
+    if (this.posXValue)
+      this.posXValue.textContent = this.posXSlider.value + "%";
+    if (this.posYValue)
+      this.posYValue.textContent = this.posYSlider.value + "%";
+  }
+
   /* ---------- Adaptive accent ---------- */
 
   /** The accent belonging to the current wallpaper (default otherwise) */
   activeAccent() {
-    if (!this.usingCustom) {
-      const wp = this.wallpapers[this.settings.builtinIndex];
-      if (wp && wp.accent) return wp.accent;
-    }
-    return DEFAULT_ACCENT;
+    const wp = this.wallpapers[this.settings.builtinIndex];
+    return (wp && wp.accent) || DEFAULT_ACCENT;
   }
 
   /**
