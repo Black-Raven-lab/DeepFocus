@@ -77,7 +77,7 @@ body {
   flex-direction: column;
 }
 
-/* ---- Live wallpaper layer: fixed, behind everything, inert ---- */
+/* ---- Wallpaper layer: fixed, behind everything, inert ---- */
 .wallpaper-layer {
   position: fixed;
   inset: 0;
@@ -86,7 +86,7 @@ body {
   pointer-events: none;
 }
 
-.wallpaper-video {
+.wallpaper-image {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -94,20 +94,6 @@ body {
   object-fit: cover; /* fills viewport, keeps aspect — no bars/stretch */
   pointer-events: none;
   filter: brightness(var(--wallpaper-brightness));
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  /* promote to its own compositor layer for hardware decoding */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.wallpaper-layer.active .wallpaper-video {
-  opacity: 1;
-}
-
-/* Fade-out phase while the source is being swapped */
-.wallpaper-layer.switching .wallpaper-video {
-  opacity: 0;
 }
 
 /* Adjustable dark overlay (readability) — sits above the wallpaper */
@@ -1473,52 +1459,22 @@ main {
 /* Sliders (progress + volume) — filled track driven by --fill */
 .slider {
   width: 100%;
-  /* The input is a tall, invisible touch band (easy to grab on
-     phones); the thin visual track lives in the track pseudo-elements
-     below, so the look is unchanged. */
-  height: 28px;
-  background: transparent;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary) var(--fill, 0%),
+    var(--card-border) var(--fill, 0%)
+  );
   outline: none;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
-  /* A touch that starts on the slider always drags the slider —
-     never turns into a page scroll (the iOS/Android drag fix) */
-  touch-action: none;
-}
-
-.slider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--accent-primary) var(--fill, 0%),
-    var(--card-border) var(--fill, 0%)
-  );
   transition: height 0.2s ease;
 }
 
-.slider::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--accent-primary) var(--fill, 0%),
-    var(--card-border) var(--fill, 0%)
-  );
-  transition: height 0.2s ease;
-}
-
-.slider:hover::-webkit-slider-runnable-track {
+.slider:hover {
   height: 6px;
-}
-
-.slider:hover::-moz-range-track {
-  height: 6px;
-}
-
-.slider:hover::-webkit-slider-thumb {
-  margin-top: -4.5px; /* stay centered on the 6px hover track */
 }
 
 .slider::-webkit-slider-thumb {
@@ -1526,16 +1482,12 @@ main {
   appearance: none;
   width: 11px;
   height: 11px;
-  /* center the 15px thumb (11 + 2x2 border) on the 4px track */
-  margin-top: -5.5px;
   border-radius: 50%;
   background: var(--text-primary);
   border: 2px solid var(--accent-primary);
   cursor: pointer;
   box-shadow: 0 0 10px var(--accent-glow-strong);
-  transition:
-    transform 0.2s ease,
-    margin-top 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
@@ -1726,11 +1678,6 @@ main {
 
 .settings-section-title i {
   color: var(--accent-primary);
-}
-
-/* Settings sliders: touches on them must drag, never scroll */
-.form-range {
-  touch-action: none;
 }
 
 .form-select {
@@ -2248,23 +2195,12 @@ main {
   }
 
   .slider {
-    height: 32px; /* generous touch band on phones/tablets */
-  }
-
-  .slider::-webkit-slider-runnable-track,
-  .slider::-moz-range-track {
     height: 6px;
   }
 
   .slider::-webkit-slider-thumb {
     width: 16px;
     height: 16px;
-    /* 20px thumb (16 + borders) centered on the 6px track */
-    margin-top: -7px;
-  }
-
-  .slider:hover::-webkit-slider-thumb {
-    margin-top: -7px;
   }
 
   .slider::-moz-range-thumb {
@@ -2418,7 +2354,7 @@ main {
     max-width: none;
     animation: none;
     width: min(420px, calc(50% - 1.5rem));
-    height: 444.59px;
+    height: auto;
   }
 
   .music-player {
@@ -2689,8 +2625,7 @@ main {
   }
 
   .player-volume .slider {
-    /* as wide as the merged control row allows */
-    width: clamp(48px, 14vw, 64px);
+    width: 56px;
     flex: none;
   }
 

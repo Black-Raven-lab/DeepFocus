@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Deep Focus - Premium Pomodoro Timer</title>
 
@@ -30,18 +30,14 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Live Wallpaper Layer (single reusable video, behind everything) -->
+    <!-- Wallpaper Layer (single reusable image, behind everything) -->
     <div class="wallpaper-layer" id="wallpaperLayer" aria-hidden="true">
-      <video
-        id="wallpaperVideo"
-        class="wallpaper-video"
-        loop
-        muted
-        playsinline
-        preload="auto"
-        disablepictureinpicture
-        disableremoteplayback
-      ></video>
+      <img
+        id="wallpaperImage"
+        class="wallpaper-image"
+        alt=""
+        aria-hidden="true"
+      />
     </div>
 
     <!-- Navbar -->
@@ -413,30 +409,16 @@
             <hr class="settings-divider" />
             <div class="settings-section-title">
               <i class="fas fa-image"></i>
-              Live Wallpaper
+              Wallpaper
             </div>
 
-            <!-- Built-in Live Wallpapers -->
+            <!-- Wallpapers -->
             <div class="settings-group">
               <label for="builtinWallpaperSelect" class="settings-label">
                 <i class="fas fa-film"></i>
-                Built-in Live Wallpapers
+                Wallpapers
               </label>
               <select id="builtinWallpaperSelect" class="form-select"></select>
-            </div>
-
-            <!-- Background Audio -->
-            <div class="settings-group">
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  id="wallpaperAudioToggle"
-                  class="form-check-input"
-                />
-                <label class="form-check-label" for="wallpaperAudioToggle">
-                  Play wallpaper audio
-                </label>
-              </div>
             </div>
 
             <!-- Brightness -->

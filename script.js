@@ -498,13 +498,13 @@ const PLAYLIST = [
     cover: "music-pic.jpg",
   },
   {
-    title: "Chill Songs | Cozy & Relaxing Music for a Peaceful Day ",
-    artist: "Lofi Playlist",
+    title: "Oogway Ascends Kung Fu Panda Soundtrack",
+    artist: "Hans Zimmer",
     src: "assets/sounds/music2.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "Quiet Time with God: 1 Hour Instrumental Worship | Prayer Music",
+    title: "Quiet Time with God: Instrumental Worship | Prayer Music",
     artist: "Serene Sessions",
     src: "assets/sounds/music3.mp3",
     cover: "music-pic.jpg",
@@ -517,8 +517,8 @@ const PLAYLIST = [
     cover: "music-pic.jpg",
   },
   {
-    title: "Night lofi playlist • lofi music | chill beats to relax/study",
-    artist: "HITO",
+    title: "The Most Romantic Songs of the Era 💝 Soft and Soulful",
+    artist: "Old Love Songs",
     src: "assets/sounds/music5.mp3",
     cover: "music-pic.jpg",
   },
@@ -535,30 +535,61 @@ const PLAYLIST = [
 // ===================================================
 
 /**
- * LIVE_WALLPAPERS — add your built-in wallpaper videos here.
- * Each entry: { name, src, accent } — src can be a local MP4/WebM
- * (e.g. "assets/wallpapers/blue-sky.mp4") or a URL. The accent color
- * retints all interactive elements to match the wallpaper's mood.
+ * WALLPAPERS — add your built-in wallpaper images here.
+ * Each entry: { name, image, accent } — image is a local PNG/JPG
+ * (e.g. "assets/images/Wallpapers/wp1-Blue_Sky.png") or a URL. The
+ * accent color retints all interactive elements to match the mood.
  */
-const LIVE_WALLPAPERS = [
+const WALLPAPERS = [
   {
     name: "Blue Sky",
-    desktop: "assets/images/Live-Wallpapers/lwp1-Blue_Sky.mp4",
-    mobile: "assets/images/Live-Wallpapers/lwp1-Blue_Sky_Mobile.MP4",
+    image: "assets/images/Wallpapers/wp1-Blue_Sky.png",
     accent: "#22D3EE",
   },
   {
     name: "Calm Forest",
-    desktop: "assets/images/Live-Wallpapers/lwp2-Calm_Forest.mp4",
-    mobile: "assets/images/Live-Wallpapers/lwp2-Calm_Forest_Mobile.MP4",
+    image: "assets/images/Wallpapers/wp2-Calm_Forest.png",
     accent: "#59C173",
   },
   {
     name: "Hidden Garden Temple",
-    desktop: "assets/images/Live-Wallpapers/lwp3-Hidden_Garden_Temple.mp4",
-    mobile:
-      "assets/images/Live-Wallpapers/lwp3-Hidden_Garden_Temple_Mobile.MP4",
+    image: "assets/images/Wallpapers/wp3-Hidden_Garden_Temple.png",
     accent: "#8BC34A",
+  },
+  {
+    name: "Midnight Summit",
+    image: "assets/images/Wallpapers/wp4-Midnight_Summit.png",
+    accent: "#8D9DB2",
+  },
+  {
+    name: "Moonlit Sakura Valley",
+    image: "assets/images/Wallpapers/wp5-Moonlit_Sakura_Valley.png",
+    accent: "#D97ACF",
+  },
+  {
+    name: "Crimson Horizono",
+    image: "assets/images/Wallpapers/wp6-Crimson_Horizon.png",
+    accent: "#d26d5f",
+  },
+  {
+    name: "Rainy Day Dreams",
+    image: "assets/images/Wallpapers/wp7-Rainy_Day_Dreams.png",
+    accent: "#E3B863  ",
+  },
+  {
+    name: "Calm City",
+    image: "assets/images/Wallpapers/wp8-Calm_City.jpg",
+    accent: "#4FD1FF",
+  },
+  {
+    name: "Golden Shepherd",
+    image: "assets/images/Wallpapers/wp9-Golden_Shepherd.png",
+    accent: "#B88936",
+  },
+  {
+    name: "Cyber Monday",
+    image: "assets/images/Wallpapers/wp10-Cyber_Monday.png",
+    accent: "#D86CE7",
   },
 ];
 
@@ -1007,7 +1038,16 @@ class AmbientPlayer {
     try {
       const s = JSON.parse(localStorage.getItem(AmbientPlayer.STORAGE_KEY));
       if (s && typeof s === "object") {
-        if (typeof s.volume === "number") this.volume = s.volume;
+        // FIX: clamp to the valid HTMLMediaElement.volume range.
+        // An out-of-range value here throws IndexSizeError the
+        // moment it is assigned to a real <audio>.volume in
+        // acquireElement() (called from restore() below), which
+        // aborts this constructor before renderPlaylist()/showTab()
+        // ever run in MusicPlayer, leaving #playerPlaylist
+        // permanently empty. Same clamp setVolume() already uses.
+        if (typeof s.volume === "number") {
+          this.volume = Math.min(1, Math.max(0, s.volume));
+        }
         if (Array.isArray(s.activeIds)) {
           this.savedIds = s.activeIds;
         } else if (s.soundId) {
@@ -1107,6 +1147,7 @@ class MusicPlayer {
       return;
     }
 
+    console.log("MusicPlayer constructor");
     this.loadState();
     this.renderPlaylist(); // built once — items are reused, never recreated
     this.renderMusicManageList();
@@ -1572,6 +1613,7 @@ class MusicPlayer {
   }
 
   renderPlaylist() {
+    console.log("renderPlaylist");
     if (!this.playlistEl) return;
 
     // Music rows are built exactly once; the Ambient tab shows the
@@ -1637,6 +1679,11 @@ class MusicPlayer {
   showTab(category, { skipSave = false } = {}) {
     if (!this.libraries[category]) category = "music";
     this.activeTab = category;
+    console.log("showTab", category);
+    console.log("playlist length", this.playlist.length);
+    console.log("activeTab", this.activeTab);
+    console.log("playerMain hidden", this.mainEl.hidden);
+    console.log("playlist hidden", this.playlistEl.hidden);
 
     this.tabButtons.forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.category === category);
@@ -1787,7 +1834,13 @@ class MusicPlayer {
     ) {
       this.trackIndex = s.trackIndex;
     }
-    if (typeof s.volume === "number") this.volume = s.volume;
+    // FIX: same out-of-range guard as AmbientPlayer.loadState() —
+    // this.audio.volume = this.volume a few lines down throws
+    // IndexSizeError on a bad stored value, which would otherwise
+    // abort this constructor before renderPlaylist() ever runs.
+    if (typeof s.volume === "number") {
+      this.volume = Math.min(1, Math.max(0, s.volume));
+    }
     this.isMuted = !!s.isMuted;
     this.isShuffle = !!s.isShuffle;
     if (["off", "all", "one"].includes(s.repeatMode)) {
@@ -1902,6 +1955,10 @@ class TaskManager {
 
   renderTasks() {
     this.taskList.innerHTML = "";
+
+    // Layout hint: an empty list lets the mobile card shrink naturally
+    const panel = document.getElementById("taskPanel");
+    if (panel) panel.classList.toggle("no-tasks", this.tasks.length === 0);
 
     this.tasks.forEach((task) => {
       const taskEl = document.createElement("div");
@@ -2372,27 +2429,24 @@ class NotificationManager {
 // ===================================================
 
 /**
- * WallpaperManager — live-wallpaper-only background system.
- * One persistent <video> element is the application background:
- * its source is swapped (never the element), switches crossfade via
- * an opacity dip, settings persist to localStorage, playback pauses
- * with tab visibility, and load failures fall back to the default
- * built-in so the background is never blank.
+ * WallpaperManager — static image background system.
+ * One persistent <img> element is the application background: its
+ * source is swapped (never the element), settings persist to
+ * localStorage, and a failed image falls back to the default built-in
+ * so the background is never blank.
  */
 class WallpaperManager {
   static STORAGE_KEY = "deepFocusWallpaper";
-  static FADE_MS = 600; // matches the CSS opacity transition
 
   constructor(wallpapers) {
     this.wallpapers = Array.isArray(wallpapers) ? wallpapers : [];
 
-    // The single video element — its src is swapped, never the element
-    this.video = document.getElementById("wallpaperVideo");
+    // The single image element — its src is swapped, never the element
+    this.image = document.getElementById("wallpaperImage");
     this.layer = document.getElementById("wallpaperLayer");
 
     // Settings controls
     this.builtinSelect = document.getElementById("builtinWallpaperSelect");
-    this.audioToggle = document.getElementById("wallpaperAudioToggle");
     this.brightnessSlider = document.getElementById(
       "wallpaperBrightnessSlider",
     );
@@ -2415,22 +2469,19 @@ class WallpaperManager {
     this.mobileMQ = window.matchMedia("(max-width: 767px)");
     this.appliedPosition = null;
 
-    if (!this.video || !this.layer) return;
+    if (!this.image || !this.layer) return;
 
     this.settings = {
       builtinIndex: 0,
       brightness: 100, // %
       overlay: 20, // %
       blur: 0, // px
-      audio: false, // wallpaper sound off by default
       // Per-wallpaper, per-screen-size position overrides:
       // { [wallpaperKey]: { desktop: "x% y%", mobile: "x% y%" } }
       positions: {},
     };
 
-    this.retryOnGesture = false; // autoplay blocked, retry on tap
-    this.failedSrcs = new Set(); // sources that errored (loop guard)
-    this.fadeTimeout = null;
+    this.failedSrcs = new Set(); // images that errored this session
 
     this.loadSettings();
     this.populateBuiltins();
@@ -2447,15 +2498,12 @@ class WallpaperManager {
         localStorage.getItem(WallpaperManager.STORAGE_KEY),
       );
       if (saved && typeof saved === "object") {
-        // "mode" from older versions is intentionally ignored —
-        // the system is live-wallpaper-only now
         const {
           wallpaper,
           builtinIndex,
           brightness,
           overlay,
           blur,
-          audio,
           positions,
         } = saved;
         // Preferred: resolve the stored wallpaper name to an index;
@@ -2474,7 +2522,6 @@ class WallpaperManager {
           ...(Number.isFinite(brightness) && { brightness }),
           ...(Number.isFinite(overlay) && { overlay }),
           ...(Number.isFinite(blur) && { blur }),
-          ...(typeof audio === "boolean" && { audio }),
           ...(positions && typeof positions === "object" && { positions }),
         };
       }
@@ -2489,8 +2536,8 @@ class WallpaperManager {
 
   saveSettings() {
     try {
-      // Only the wallpaper NAME is stored — the desktop/mobile variant
-      // is always decided automatically at load time
+      // Only the wallpaper NAME is stored — resolved to an image src
+      // again at load time
       const wp = this.wallpapers[this.settings.builtinIndex];
       const { builtinIndex, ...rest } = this.settings;
       localStorage.setItem(
@@ -2508,7 +2555,7 @@ class WallpaperManager {
     this.builtinSelect.innerHTML = "";
     if (this.wallpapers.length === 0) {
       const opt = document.createElement("option");
-      opt.textContent = "No built-in wallpapers configured";
+      opt.textContent = "No wallpapers configured";
       opt.disabled = true;
       opt.selected = true;
       this.builtinSelect.appendChild(opt);
@@ -2527,16 +2574,6 @@ class WallpaperManager {
     this.builtinSelect.addEventListener("change", () => {
       this.settings.builtinIndex = parseInt(this.builtinSelect.value, 10) || 0;
       this.apply();
-      this.saveSettings();
-    });
-
-    this.audioToggle.addEventListener("change", () => {
-      this.settings.audio = this.audioToggle.checked;
-      this.video.muted = !this.settings.audio;
-      if (this.settings.audio) {
-        // The toggle click is a user gesture, so play-with-sound is allowed
-        this.video.play().catch(() => {});
-      }
       this.saveSettings();
     });
 
@@ -2587,15 +2624,11 @@ class WallpaperManager {
       });
     }
 
-    // Crossing the mobile breakpoint (resize/rotation): switch to the
-    // correct video variant. The event only fires when the device
-    // category actually changes, and setSource() no-ops when the
-    // resolved source is identical — no unnecessary reloads.
+    // Crossing the mobile breakpoint (resize/rotation): the image
+    // itself doesn't change, only its framing (object-position)
     const onMQChange = () => {
       this.applyPosition();
       this.syncPositionControls();
-      const src = this.currentSrc();
-      if (src) this.setSource(src); // fades, keeps looping, auto-plays
     };
     if (this.mobileMQ.addEventListener) {
       this.mobileMQ.addEventListener("change", onMQChange);
@@ -2603,38 +2636,17 @@ class WallpaperManager {
       this.mobileMQ.addListener(onMQChange); // older Safari
     }
 
-    // A wallpaper that can't load falls back to the default built-in —
+    // An image that can't load falls back to the default built-in —
     // the background must never end up blank
-    this.video.addEventListener("error", () => this.handleVideoFailure());
-
-    // Performance: no decoding while the tab is hidden
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        this.video.pause();
-      } else if (this.layer.classList.contains("active")) {
-        this.video.play().catch(() => {});
-      }
-    });
+    this.image.addEventListener("error", () => this.handleImageFailure());
   }
 
-  /* ---------- Source selection (automatic desktop/mobile variant) ---------- */
+  /* ---------- Source selection ---------- */
 
-  /** Preference order for the current screen. Mobile screens try the
-   *  portrait video first, then the landscape one; desktop screens use
-   *  the landscape video (a failure there falls to another wallpaper,
-   *  per the failure-handling contract). */
-  variantChain(wp) {
-    return this.mobileMQ.matches
-      ? [wp.mobile, wp.desktop]
-      : [wp.desktop, wp.mobile];
-  }
-
-  /** First variant of a wallpaper that hasn't failed this session */
+  /** The wallpaper's image, if it hasn't failed this session */
   srcFor(wp) {
-    if (!wp) return null;
-    return (
-      this.variantChain(wp).find((s) => s && !this.failedSrcs.has(s)) || null
-    );
+    if (!wp || !wp.image || this.failedSrcs.has(wp.image)) return null;
+    return wp.image;
   }
 
   currentSrc() {
@@ -2674,111 +2686,30 @@ class WallpaperManager {
     this.setSource(src);
   }
 
-  /**
-   * Swap the video source with a smooth fade. The single element is
-   * reused; if the source hasn't changed, nothing happens at all.
-   */
+  /** Swap the image source. The single element is reused; if the
+   *  source hasn't changed, nothing happens at all. */
   setSource(src) {
-    if (this.video.getAttribute("src") === src) {
-      // Same wallpaper — just make sure it's visible and playing
-      this.layer.classList.add("active");
-      this.playCurrent();
-      return;
-    }
-
-    clearTimeout(this.fadeTimeout);
-
-    const firstLoad = !this.video.getAttribute("src");
-    const swap = () => {
-      this.video.setAttribute("src", src);
-      this.video.load();
-      this.video.muted = !this.settings.audio;
-      this.layer.classList.remove("switching");
-      this.layer.classList.add("active");
-      this.playCurrent();
-      this.prefetchNext(); // browser-idle hint, not a second video
-    };
-
-    if (firstLoad) {
-      swap(); // nothing on screen yet — fade straight in
-    } else {
-      // Fade the current wallpaper out, then swap and fade back in
-      this.layer.classList.add("switching");
-      this.fadeTimeout = setTimeout(swap, WallpaperManager.FADE_MS);
-    }
-  }
-
-  /** Low-priority prefetch hint for the next wallpaper in the list —
-   *  a <link rel=prefetch>, never a second video element */
-  prefetchNext() {
-    if (this.wallpapers.length < 2) return;
-    const next =
-      this.wallpapers[
-        (this.settings.builtinIndex + 1) % this.wallpapers.length
-      ];
-    const src = this.srcFor(next);
-    if (!src) return;
-    this.prefetched = this.prefetched || new Set();
-    if (this.prefetched.has(src)) return;
-    this.prefetched.add(src);
-    const link = document.createElement("link");
-    link.rel = "prefetch";
-    link.as = "video";
-    link.href = src;
-    document.head.appendChild(link);
-  }
-
-  playCurrent() {
-    this.video
-      .play()
-      .then(() => {
-        this.retryOnGesture = false;
-      })
-      .catch(() => {
-        // Autoplay blocked (some mobile browsers) — retry on first tap
-        this.armGestureRetry();
-      });
-  }
-
-  /** One-shot retry when autoplay policy needs a user gesture first */
-  armGestureRetry() {
-    if (this.retryOnGesture) return;
-    this.retryOnGesture = true;
-    document.addEventListener(
-      "pointerdown",
-      () => {
-        this.retryOnGesture = false;
-        this.video.play().catch(() => this.handleVideoFailure());
-      },
-      { once: true },
-    );
+    if (this.image.getAttribute("src") === src) return;
+    this.image.setAttribute("src", src);
+    this.layer.classList.add("active");
   }
 
   /**
-   * A wallpaper failed to load/play. Fall back to the default built-in
+   * An image failed to load. Fall back to the default built-in
    * (index 0). Each source only gets one attempt per session, so a
    * broken default can't cause an error loop — worst case, the dark
    * base color and overlay remain, never a blank white page.
    */
-  handleVideoFailure() {
-    const failed = this.video.getAttribute("src");
+  handleImageFailure() {
+    const failed = this.image.getAttribute("src");
     if (failed) this.failedSrcs.add(failed);
 
-    // 1) Same wallpaper, other variant (mobile -> desktop typically):
-    //    srcFor() skips failed sources, so if anything is left for the
-    //    selected wallpaper, keep the user's selection
-    if (this.currentSrc()) {
-      this.apply();
-      return;
-    }
-
-    // 2) Otherwise: first wallpaper with any working variant (default
-    //    built-in first) — the background must never end up blank
+    // First wallpaper with a working image (default built-in first) —
+    // the background must never end up blank
     const index = this.wallpapers.findIndex((wp) => this.srcFor(wp));
     if (index === -1) {
-      // Everything failed — hide the video, keep the dark base
-      this.layer.classList.remove("active", "switching");
-      this.video.pause();
+      // Everything failed — hide the image, keep the dark base
+      this.layer.classList.remove("active");
       return;
     }
 
@@ -2794,27 +2725,19 @@ class WallpaperManager {
     return this.mobileMQ.matches ? "mobile" : "desktop";
   }
 
-  /** Stable identity for the current wallpaper's saved positions —
-   *  the name, so desktop and mobile variants share one identity */
+  /** Stable identity for the current wallpaper's saved positions */
   wallpaperKey() {
     const wp = this.wallpapers[this.settings.builtinIndex];
     return wp ? wp.name : "none";
   }
 
-  /** Effective position: user override -> wallpaper profile -> center */
+  /** Effective position: user override, otherwise center */
   currentPositionValue() {
     const key = this.wallpaperKey();
     const mode = this.positionMode();
     const override =
       this.settings.positions[key] && this.settings.positions[key][mode];
-    if (override) return override;
-    const wp = this.wallpapers[this.settings.builtinIndex];
-    if (wp) {
-      const profile =
-        mode === "mobile" ? wp.mobilePosition : wp.desktopPosition;
-      if (profile) return profile;
-    }
-    return "center center";
+    return override || "center center";
   }
 
   /** Only touches the style when the value actually changes (perf) */
@@ -2822,7 +2745,7 @@ class WallpaperManager {
     const pos = this.currentPositionValue();
     if (pos === this.appliedPosition) return;
     this.appliedPosition = pos;
-    this.video.style.objectPosition = pos;
+    this.image.style.objectPosition = pos;
   }
 
   /** "60% center" / "left top" -> numeric slider values */
@@ -2894,7 +2817,6 @@ class WallpaperManager {
     if (!this.builtinSelect.disabled) {
       this.builtinSelect.value = String(this.settings.builtinIndex);
     }
-    this.audioToggle.checked = !!this.settings.audio;
     this.brightnessSlider.value = String(this.settings.brightness);
     this.overlaySlider.value = String(this.settings.overlay);
     this.blurSlider.value = String(this.settings.blur);
@@ -2916,11 +2838,28 @@ class WallpaperManager {
 
 // Initialize timer when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
+  // BUGFIX: WallpaperManager used to be constructed LAST here. It has
+  // no dependency on the timer/task/music classes, but because all
+  // five "new X()" calls shared one try-free block, a throw in ANY
+  // earlier constructor (e.g. NotificationManager's `new bootstrap.Modal`
+  // if the Bootstrap CDN script is blocked, slow, or fails to load)
+  // aborted the rest of this callback — so WallpaperManager was never
+  // constructed, video.src was never set, and only the dark overlay
+  // showed. Constructing it first, and wrapping it in its own
+  // try/catch, means the wallpaper now initializes independently of
+  // every other feature and reports a clear console error instead of
+  // silently vanishing if it ever fails on its own.
+  let wallpaperManager;
+  try {
+    wallpaperManager = new WallpaperManager(WALLPAPERS);
+  } catch (err) {
+    console.error("[wallpaper] failed to initialize:", err);
+  }
+
   const timer = new PomodoroTimer();
   const taskManager = new TaskManager();
   const notificationManager = new NotificationManager(timer);
   const musicPlayer = new MusicPlayer(PLAYLIST, AMBIENT_SOUNDS);
-  const wallpaperManager = new WallpaperManager(LIVE_WALLPAPERS);
 
   // Integrate task manager with timer
   const originalTimerComplete = timer.timerComplete.bind(timer);
@@ -2959,6 +2898,15 @@ document.addEventListener("DOMContentLoaded", () => {
         playerCard.classList.toggle("collapsed");
       }
     });
+  }
+
+  // Phones open with both cards collapsed to their header bars, so the
+  // whole app fits one screen; a tap expands whichever is needed.
+  // Desktop is untouched (the classes only style below 768px there
+  // for the player, and tasks default expanded on wide screens).
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    if (playerCard) playerCard.classList.add("collapsed");
+    if (taskPanel) taskPanel.classList.add("collapsed");
   }
 
   // Add keyboard shortcuts info (optional)
