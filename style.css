@@ -647,9 +647,9 @@ main {
   border-bottom-color: transparent;
 }
 
-/* Collapse chevron — mobile-only affordance, hidden on desktop */
+/* Collapse chevron — visible at every screen size, same as
+   .task-panel-close, so the header always shows it's clickable */
 .player-collapse-btn {
-  display: none;
   background: transparent;
   border: none;
   color: var(--text-tertiary);

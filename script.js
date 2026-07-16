@@ -522,6 +522,13 @@ const PLAYLIST = [
     src: "assets/sounds/music5.mp3",
     cover: "music-pic.jpg",
   },
+  {
+    title:
+      "覆予 - 因为爱情 (独唱版)『因为爱情不会轻易悲伤，所以一切都是幸福的模样。",
+    artist: "动态歌词",
+    src: "assets/sounds/music6.mp3",
+    cover: "music-pic.jpg",
+  },
   // {
   //   title: "Second Track",
   //   artist: "Artist Name",
@@ -2888,15 +2895,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Music player collapse — mobile only, so users can flip between
-  // Music and Tasks without long scrolling. Desktop is unaffected.
+  // Music player collapse — same unconditional toggle as the Task
+  // panel, so both cards behave identically at every screen size.
   const playerCard = document.getElementById("musicPlayer");
   const playerHeader = document.querySelector(".player-header");
   if (playerCard && playerHeader) {
     playerHeader.addEventListener("click", () => {
-      if (window.matchMedia("(max-width: 767px)").matches) {
-        playerCard.classList.toggle("collapsed");
-      }
+      playerCard.classList.toggle("collapsed");
     });
   }
 
