@@ -529,6 +529,12 @@ const PLAYLIST = [
     src: "assets/sounds/music6.mp3",
     cover: "music-pic.jpg",
   },
+  {
+    title: "半點心 ",
+    artist: "草蜢 Grasshopper",
+    src: "assets/sounds/music7.mp3",
+    cover: "music-pic.jpg",
+  },
   // {
   //   title: "Second Track",
   //   artist: "Artist Name",
