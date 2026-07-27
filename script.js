@@ -492,43 +492,43 @@ class PomodoroTimer {
  */
 const PLAYLIST = [
   {
-    title: "Night lofi playlist • lofi music | chill beats to relax/study",
-    artist: "HITO",
+    title: "茶館 | 輕鬆舒緩的中國傳統音樂",
+    artist: "Two Moons Shine",
+    src: "assets/sounds/music0.mp3",
+    cover: "music-pic.jpg",
+  },
+  {
+    title: "暗里着迷",
+    artist: "Andy Lau(刘德华) - anrora Piano 漫罗拉",
     src: "assets/sounds/music1.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "Oogway Ascends Kung Fu Panda Soundtrack",
-    artist: "Hans Zimmer",
-    src: "assets/sounds/music2.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "Quiet Time with God: Instrumental Worship | Prayer Music",
-    artist: "Serene Sessions",
-    src: "assets/sounds/music3.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title:
-      "Demon Slayer Infinity castle Movie OST: Akaza's Backstory Theme | Emotional Version",
-    artist: "Tsuyu 愛",
-    src: "assets/sounds/music4.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "The Most Romantic Songs of the Era 💝 Soft and Soulful",
-    artist: "Old Love Songs",
-    src: "assets/sounds/music5.mp3",
     cover: "music-pic.jpg",
   },
   {
     title:
       "覆予 - 因为爱情 (独唱版)『因为爱情不会轻易悲伤，所以一切都是幸福的模样。",
     artist: "动态歌词",
-    src: "assets/sounds/music6.mp3",
+    src: "assets/sounds/music2.mp3",
     cover: "music-pic.jpg",
   },
+  {
+    title: "风夜行",
+    artist: "蒋雪儿",
+    src: "assets/sounds/music3.mp3",
+    cover: "music-pic.jpg",
+  },
+  {
+    title: "一笑江湖",
+    artist: "姜姜",
+    src: "assets/sounds/music4.mp3",
+    cover: "music-pic.jpg",
+  },
+  {
+    title: "辞∙九门回忆",
+    artist: "合唱版",
+    src: "assets/sounds/music5.mp3",
+    cover: "music-pic.jpg",
+  },
+
   // {
   //   title: "Second Track",
   //   artist: "Artist Name",
@@ -549,9 +549,9 @@ const PLAYLIST = [
  */
 const WALLPAPERS = [
   {
-    name: "Blue Sky",
-    image: "assets/images/Wallpapers/wp1-Blue_Sky.png",
-    accent: "#22D3EE",
+    name: "Serene princess in a golden valley",
+    image: "assets/images/Wallpapers/wp1.png",
+    accent: "#D4AF6A",
   },
   {
     name: "Calm Forest",
@@ -597,6 +597,11 @@ const WALLPAPERS = [
     name: "Cyber Monday",
     image: "assets/images/Wallpapers/wp10-Cyber_Monday.png",
     accent: "#D86CE7",
+  },
+  {
+    name: "Moonlit reverie by the riverside",
+    image: "assets/images/Wallpapers/wp11-Moonlit_reverie_by_the_riverside.png",
+    accent: "#8CB8FF",
   },
 ];
 
