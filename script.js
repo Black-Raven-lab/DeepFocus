@@ -529,12 +529,6 @@ const PLAYLIST = [
     src: "assets/sounds/music6.mp3",
     cover: "music-pic.jpg",
   },
-  {
-    title: "半點心 ",
-    artist: "草蜢 Grasshopper",
-    src: "assets/sounds/music7.mp3",
-    cover: "music-pic.jpg",
-  },
   // {
   //   title: "Second Track",
   //   artist: "Artist Name",
@@ -2125,24 +2119,60 @@ class NotificationManager {
 
     this.loadSettings();
     this.initEventListeners();
+    this.unlockAudio(); // arms the first-gesture unlock listeners below
+  }
+
+  /**
+   * BUGFIX: the previous "preload on first interaction" hook only
+   * called bellAudio.load(), which merely buffers the file — it does
+   * NOT satisfy a browser's autoplay-permission gate (its own comment
+   * claiming otherwise was incorrect). Real unlocking requires an
+   * actual play() call paired synchronously with a genuine user
+   * gesture; play() immediately followed by pause() is the standard
+   * technique. Without this, a later async play() from inside
+   * setInterval (e.g. when a Short/Long Break silently finishes and
+   * auto-returns to Pomodoro, with no fresh click of its own) can be
+   * silently rejected on browsers with stricter/decaying gesture
+   * timeouts (notably iOS Safari) — while the Pomodoro-finish bell,
+   * which follows soon after a real click (Start, or a break choice),
+   * still plays. Unlocking once, for real, removes that asymmetry:
+   * every later play() — in either direction — reuses the same
+   * already-unlocked element.
+   */
+  unlockAudio() {
+    const unlock = () => {
+      if (!this.bellAudio) {
+        this.bellAudio = new Audio("assets/sounds/School-Bell-Ring.mp3");
+        this.bellAudio.preload = "auto";
+        this.bellSrcIndex = 0;
+      }
+      if (this.bellUnlocked) return;
+      const el = this.bellAudio;
+      const prevVolume = el.volume;
+      el.volume = 0; // inaudible during the unlock play/pause blip
+      el.play()
+        .then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.volume = prevVolume;
+          this.bellUnlocked = true;
+        })
+        .catch(() => {
+          // Still blocked (rare) — leave unlocked=false so the next
+          // real gesture (e.g. clicking Start) gets another attempt
+          el.volume = prevVolume;
+        });
+    };
+
+    // Any early tap/click anywhere unlocks it...
+    document.addEventListener("pointerdown", unlock, { once: true });
+    // ...and the Start button specifically gets its own guaranteed
+    // attempt, since that's the one gesture every session always has.
+    const startBtn = document.getElementById("startBtn");
+    if (startBtn) startBtn.addEventListener("click", unlock, { once: true });
   }
 
   initEventListeners() {
-    // Preload the bell on the first user interaction so it's already
-    // buffered (and permitted by browser autoplay policy) when time is up
-    document.addEventListener(
-      "pointerdown",
-      () => {
-        if (!this.bellAudio) {
-          this.bellAudio = new Audio("assets/sounds/School-Bell-Ring.mp3");
-          this.bellAudio.preload = "auto";
-          this.bellSrcIndex = 0;
-          this.bellAudio.load();
-        }
-      },
-      { once: true },
-    );
-
     if (this.soundToggle) {
       this.soundToggle.addEventListener("change", (e) => {
         this.enableSound = e.target.checked;
@@ -2216,6 +2246,12 @@ class NotificationManager {
     });
   }
 
+  /**
+   * The single, shared notification-sound function. handleSessionComplete()
+   * calls this identically for every timer completion — Pomodoro finishing
+   * (into a break) and Short/Long Break finishing (back into Pomodoro) —
+   * so there is exactly one place that can play (or fail to play) the bell.
+   */
   playZenBell() {
     if (!this.enableSound) return;
 
@@ -2230,7 +2266,9 @@ class NotificationManager {
     };
 
     // Try known locations for the bell file, in order. Once a working
-    // source is found, the same Audio instance is reused on every ring.
+    // source is found, the same (now-unlocked, see unlockAudio()) Audio
+    // instance is reused on every ring, for every session, in both
+    // directions.
     const sources = [
       "School-Bell-Ring.mp3",
       "assets/sounds/School-Bell-Ring.mp3",
@@ -2251,8 +2289,12 @@ class NotificationManager {
         this.bellSrcIndex = i;
       }
 
-      this.bellAudio.volume = this.soundVolume / 100;
+      // Explicit pause -> reset -> play, every time, regardless of
+      // direction (stopZenBell() above already paused it; this stays
+      // self-contained even if that call is ever removed later).
+      this.bellAudio.pause();
       this.bellAudio.currentTime = 0;
+      this.bellAudio.volume = this.soundVolume / 100;
       this.bellAudio
         .play()
         .then(scheduleAutoStop)
