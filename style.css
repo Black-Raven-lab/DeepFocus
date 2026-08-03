@@ -207,14 +207,21 @@ main {
   font-size: 0.85rem;
   text-align: right;
 }
-
 .quote-section i {
   color: var(--accent-primary);
   opacity: 0.6;
 }
 
+.quote-section .fa-quote-left {
+  transform: translateY(-14px);
+}
+
+.quote-section .fa-quote-right {
+  transform: translateY(14px);
+}
+
 .quote-line {
-  line-height: 1.3;
+  line-height: 1.5;
 }
 
 /* ===================================================
@@ -545,7 +552,7 @@ main {
    =================================================== */
 
 .music-player {
-  --player-width: 250px;
+  --player-width: 300px;
   position: fixed;
   bottom: 2rem;
   left: 2rem;
@@ -1888,7 +1895,8 @@ main {
 }
 
 .task-input {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0; /* NEW — lets the input shrink past its intrinsic width instead of the button */
   height: 48px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--card-border);
@@ -1912,6 +1920,7 @@ main {
 }
 
 .task-add-btn {
+  flex: 0 0 auto; /* NEW — fixed size, takes no shrink share, never collapses */
   background: linear-gradient(
     135deg,
     var(--accent-primary),
@@ -2039,7 +2048,7 @@ main {
   padding: 0.6rem 1rem;
   border-radius: 0.6rem;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   transition: var(--transition);
   display: flex;
@@ -2234,7 +2243,7 @@ main {
   }
 
   .music-player {
-    --player-width: 280px;
+    --player-width: 300px;
   }
 
   .bottom-quote {
@@ -2249,7 +2258,7 @@ main {
   }
 
   .music-player {
-    --player-width: 225px;
+    --player-width: 300px;
     bottom: 1.5rem;
     left: 1.5rem;
     padding: 0.9rem;
@@ -2351,10 +2360,10 @@ main {
   .task-panel {
     position: static;
     margin: 0;
-    max-width: none;
+    max-width: 420px;
     animation: none;
     width: min(420px, calc(50% - 1.5rem));
-    height: auto;
+    height: 490px;
   }
 
   .music-player {
@@ -2373,7 +2382,7 @@ main {
     order: 3;
     /* definite height: the list scrolls inside, and collapsing can
        animate (height: auto -> value can't tween) */
-    height: min(470px, 60vh);
+    height: min(490px, 60vh);
   }
 
   .discord-card {
@@ -2740,7 +2749,7 @@ main {
   }
 
   .task-footer-btn {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     padding: 0.4rem 0.5rem;
   }
 

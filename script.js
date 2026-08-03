@@ -492,40 +492,22 @@ class PomodoroTimer {
  */
 const PLAYLIST = [
   {
-    title: "茶館 | 輕鬆舒緩的中國傳統音樂",
-    artist: "Two Moons Shine",
-    src: "assets/sounds/music0.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "暗里着迷",
-    artist: "Andy Lau(刘德华) - anrora Piano 漫罗拉",
+    title:
+      "Happy Music to Start Your Day 🌸 Uplifting Chill Vibes for Work & Study",
+    artist: "Luna chill",
     src: "assets/sounds/music1.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title:
-      "覆予 - 因为爱情 (独唱版)『因为爱情不会轻易悲伤，所以一切都是幸福的模样。",
-    artist: "动态歌词",
+    title: "🌸 30 Minute Countdown Timer for Focus & Productivity ",
+    artist: "#Meow",
     src: "assets/sounds/music2.mp3",
     cover: "music-pic.jpg",
   },
   {
-    title: "风夜行",
-    artist: "蒋雪儿",
+    title: "QUICK 30 MIN STUDY WITH ME and the clouds☁️Calm Piano 🎹",
+    artist: "Nui's Corner",
     src: "assets/sounds/music3.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "一笑江湖",
-    artist: "姜姜",
-    src: "assets/sounds/music4.mp3",
-    cover: "music-pic.jpg",
-  },
-  {
-    title: "辞∙九门回忆",
-    artist: "合唱版",
-    src: "assets/sounds/music5.mp3",
     cover: "music-pic.jpg",
   },
 
@@ -538,7 +520,7 @@ const PLAYLIST = [
 ];
 
 // ===================================================
-// LIVE WALLPAPER
+// WALLPAPER
 // ===================================================
 
 /**
@@ -549,59 +531,30 @@ const PLAYLIST = [
  */
 const WALLPAPERS = [
   {
-    name: "Serene princess in a golden valley",
-    image: "assets/images/Wallpapers/wp1.png",
-    accent: "#D4AF6A",
+    name: "Moonlit Winter Forest",
+    image: "assets/images/Wallpapers/wp4.jpg",
+    accent: "#89C8FF",
   },
   {
-    name: "Calm Forest",
-    image: "assets/images/Wallpapers/wp2-Calm_Forest.png",
+    name: "Teal Mist",
+    image: "assets/images/Wallpapers/wp2.png",
     accent: "#59C173",
   },
   {
-    name: "Hidden Garden Temple",
-    image: "assets/images/Wallpapers/wp3-Hidden_Garden_Temple.png",
-    accent: "#8BC34A",
+    name: "Black Sand",
+    image: "assets/images/Wallpapers/wp3.png",
+    accent: "#565c65",
   },
   {
-    name: "Midnight Summit",
-    image: "assets/images/Wallpapers/wp4-Midnight_Summit.png",
-    accent: "#8D9DB2",
+    name: "Azure Horizon",
+    image: "assets/images/Wallpapers/wp1.png",
+    accent: "#48ace3",
   },
+
   {
-    name: "Moonlit Sakura Valley",
-    image: "assets/images/Wallpapers/wp5-Moonlit_Sakura_Valley.png",
-    accent: "#D97ACF",
-  },
-  {
-    name: "Crimson Horizono",
-    image: "assets/images/Wallpapers/wp6-Crimson_Horizon.png",
-    accent: "#d26d5f",
-  },
-  {
-    name: "Rainy Day Dreams",
-    image: "assets/images/Wallpapers/wp7-Rainy_Day_Dreams.png",
-    accent: "#E3B863  ",
-  },
-  {
-    name: "Calm City",
-    image: "assets/images/Wallpapers/wp8-Calm_City.jpg",
-    accent: "#4FD1FF",
-  },
-  {
-    name: "Golden Shepherd",
-    image: "assets/images/Wallpapers/wp9-Golden_Shepherd.png",
-    accent: "#B88936",
-  },
-  {
-    name: "Cyber Monday",
-    image: "assets/images/Wallpapers/wp10-Cyber_Monday.png",
-    accent: "#D86CE7",
-  },
-  {
-    name: "Moonlit reverie by the riverside",
-    image: "assets/images/Wallpapers/wp11-Moonlit_reverie_by_the_riverside.png",
-    accent: "#8CB8FF",
+    name: "Roadside Serenity",
+    image: "assets/images/Wallpapers/wp5.jpg",
+    accent: "#ccb569",
   },
 ];
 
