@@ -510,6 +510,12 @@ const PLAYLIST = [
     src: "assets/sounds/music3.mp3",
     cover: "music-pic.jpg",
   },
+  {
+    title: "Lo-fi Music for classroom & Study",
+    artist: "Nui's Corner",
+    src: "assets/sounds/music4.mp3",
+    cover: "music-pic.jpg",
+  },
 
   // {
   //   title: "Second Track",
