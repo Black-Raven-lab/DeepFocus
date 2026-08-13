@@ -609,6 +609,13 @@ function hexToRgba(hex, alpha) {
  */
 const AMBIENT_SOUNDS = [
   {
+    id: "Ticking_Clock",
+    title: "Ticking Clock",
+    icon: "\u{23F0}",
+    file: "assets/ambients/ticking.mp3",
+    loop: true,
+  },
+  {
     id: "ocean",
     title: "Ocean Waves",
     icon: "\u{1F30A}",
@@ -2055,7 +2062,7 @@ class NotificationManager {
     this.audioContext = null;
     this.isHandlingCompletion = false;
     this.fallbackNodes = [];
-    this.bellStopTimeout = null; // auto-stops the bell after 3 seconds
+    this.bellStopTimeout = null; // auto-stops the bell after 6 seconds
 
     this.dismissBtn = document.getElementById("dismissBtn");
 
@@ -2223,10 +2230,12 @@ class NotificationManager {
     // any pending auto-stop) before starting, so sounds never overlap.
     this.stopZenBell();
 
-    // Ring for exactly 3 seconds, then stop automatically
+    // Ring for 15 seconds total. The mp3 itself is only ~6s, so it's
+    // set to loop — otherwise playback would just end early and leave
+    // this timeout stopping silence for the remaining time.
     const scheduleAutoStop = () => {
       clearTimeout(this.bellStopTimeout);
-      this.bellStopTimeout = setTimeout(() => this.stopZenBell(), 3000);
+      this.bellStopTimeout = setTimeout(() => this.stopZenBell(), 15000);
     };
 
     // Try known locations for the bell file, in order. Once a working
@@ -2259,6 +2268,7 @@ class NotificationManager {
       this.bellAudio.pause();
       this.bellAudio.currentTime = 0;
       this.bellAudio.volume = this.soundVolume / 100;
+      this.bellAudio.loop = true; // repeats to fill the 15s ring window
       this.bellAudio
         .play()
         .then(scheduleAutoStop)
