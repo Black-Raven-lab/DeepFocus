@@ -2062,9 +2062,10 @@ class NotificationManager {
     this.audioContext = null;
     this.isHandlingCompletion = false;
     this.fallbackNodes = [];
-    this.bellStopTimeout = null; // auto-stops the bell after 6 seconds
+    this.bellStopTimeout = null; // repeat interval for the synthesized fallback beep (mp3 path loops natively via loop=true)
 
     this.dismissBtn = document.getElementById("dismissBtn");
+    this.gotItBtn = document.getElementById("gotItBtn");
 
     // DOM Elements
     this.soundToggle = document.getElementById("soundToggle");
@@ -2175,6 +2176,11 @@ class NotificationManager {
         this.stopZenBell();
       });
     }
+    if (this.gotItBtn) {
+      this.gotItBtn.addEventListener("click", () => {
+        this.stopZenBell();
+      });
+    }
 
     // Whenever the modal closes (any way), make sure the sound is off
     // and completion handling is unlocked for the next session.
@@ -2230,13 +2236,9 @@ class NotificationManager {
     // any pending auto-stop) before starting, so sounds never overlap.
     this.stopZenBell();
 
-    // Ring for 15 seconds total. The mp3 itself is only ~6s, so it's
-    // set to loop — otherwise playback would just end early and leave
-    // this timeout stopping silence for the remaining time.
-    const scheduleAutoStop = () => {
-      clearTimeout(this.bellStopTimeout);
-      this.bellStopTimeout = setTimeout(() => this.stopZenBell(), 15000);
-    };
+    // No auto-stop: the bell loops indefinitely until the user stops
+    // it — via Dismiss, Start, Reset, a tab switch, Space/R, or
+    // closing the modal (all already wired to call stopZenBell()).
 
     // Try known locations for the bell file, in order. Once a working
     // source is found, the same (now-unlocked, see unlockAudio()) Audio
@@ -2252,7 +2254,6 @@ class NotificationManager {
       if (i >= sources.length) {
         // No file could be loaded — fall back to a synthesized bell
         this.playFallbackBeep();
-        scheduleAutoStop();
         return;
       }
 
@@ -2268,56 +2269,60 @@ class NotificationManager {
       this.bellAudio.pause();
       this.bellAudio.currentTime = 0;
       this.bellAudio.volume = this.soundVolume / 100;
-      this.bellAudio.loop = true; // repeats to fill the 15s ring window
-      this.bellAudio
-        .play()
-        .then(scheduleAutoStop)
-        .catch(() => {
-          // File missing or blocked at this path — try the next one
-          this.bellAudio = null;
-          tryPlay(i + 1);
-        });
+      this.bellAudio.loop = true; // repeats until the user stops it
+      this.bellAudio.play().catch(() => {
+        // File missing or blocked at this path — try the next one
+        this.bellAudio = null;
+        tryPlay(i + 1);
+      });
     };
 
     try {
       tryPlay(this.bellSrcIndex || 0);
     } catch (err) {
       this.playFallbackBeep();
-      scheduleAutoStop();
     }
   }
 
-  /** Web Audio bell-like chime used only if the mp3 can't be found */
+  /** Web Audio bell-like chime used only if the mp3 can't be found.
+   *  Repeats every 1.5s (chime + gap) until stopZenBell() cancels it,
+   *  so the fallback path loops indefinitely just like the mp3 path. */
   playFallbackBeep() {
-    try {
-      if (!this.audioContext) {
-        this.audioContext = new (
-          window.AudioContext || window.webkitAudioContext
-        )();
-      }
-      const ctx = this.audioContext;
-      const vol = (this.soundVolume / 100) * 0.4;
+    const ring = () => {
+      try {
+        if (!this.audioContext) {
+          this.audioContext = new (
+            window.AudioContext || window.webkitAudioContext
+          )();
+        }
+        const ctx = this.audioContext;
+        const vol = (this.soundVolume / 100) * 0.4;
 
-      [880, 1108].forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        const t = ctx.currentTime + idx * 0.35;
-        gain.gain.setValueAtTime(vol, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
-        osc.start(t);
-        osc.stop(t + 1.2);
-        this.fallbackNodes.push(osc);
-        osc.onended = () => {
-          this.fallbackNodes = this.fallbackNodes.filter((n) => n !== osc);
-        };
-      });
-    } catch (_) {
-      /* audio unavailable */
-    }
+        [880, 1108].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          const t = ctx.currentTime + idx * 0.35;
+          gain.gain.setValueAtTime(vol, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+          osc.start(t);
+          osc.stop(t + 1.2);
+          this.fallbackNodes.push(osc);
+          osc.onended = () => {
+            this.fallbackNodes = this.fallbackNodes.filter((n) => n !== osc);
+          };
+        });
+      } catch (_) {
+        /* audio unavailable */
+      }
+    };
+
+    ring(); // first chime immediately
+    clearInterval(this.bellStopTimeout);
+    this.bellStopTimeout = setInterval(ring, 1500);
   }
 
   showCompletionModal(sessionType) {
@@ -2328,14 +2333,25 @@ class NotificationManager {
     };
     const messages = {
       pomodoro: "You&apos;ve completed a focus session. Ready for a break?",
-      "short-break": "Ready to dive back in?",
-      "long-break": "Feeling refreshed? Time for another focus session?",
+      "short-break":
+        "Ready to dive back in? Click 'Got it' when you're ready to begin your next Pomodoro.",
+      "long-break":
+        "Feeling refreshed? Click 'Got it' when you're ready to begin your next Pomodoro.",
     };
 
     document.getElementById("sessionCompleteTitle").textContent =
       titles[sessionType];
     document.getElementById("sessionCompleteMessage").textContent =
       messages[sessionType];
+
+    // A break just ended and the timer is already back on Pomodoro —
+    // there's no "next session" choice to make here, only Start, so
+    // the Next Session button (which leads to the break-choice modal)
+    // doesn't apply. It's still shown after a Pomodoro finishes.
+    const isPomodoro = sessionType === "pomodoro";
+    this.nextSessionBtn.style.display = isPomodoro ? "flex" : "none";
+    this.dismissBtn.style.display = isPomodoro ? "flex" : "none";
+    this.gotItBtn.style.display = isPomodoro ? "none" : "flex";
 
     this.sessionCompleteModal.show();
   }
@@ -2377,16 +2393,19 @@ class NotificationManager {
       this.showCompletionModal(sessionType);
       // Guard is released when the modal closes (hidden.bs.modal)
     } else {
-      // Short/Long break: no modal, no confirmation — automatically
-      // switch back to the Focus session and start it.
-      this.isHandlingCompletion = false;
-      this.timer.startSession("pomodoro");
+      // Short/Long break: return to Pomodoro — reset to the full
+      // duration, but paused — then prompt the user. The prompt is
+      // informational only; clicking the main Start button (not
+      // anything in this modal) is what begins the next Pomodoro.
+      this.timer.switchSession("pomodoro");
+      this.showCompletionModal(sessionType);
+      // Guard is released when the modal closes (hidden.bs.modal)
     }
   }
 
   //Create a function to stop the bell (mp3 and fallback beep alike).
   stopZenBell() {
-    clearTimeout(this.bellStopTimeout);
+    clearInterval(this.bellStopTimeout);
     this.bellStopTimeout = null;
 
     if (this.bellAudio) {
