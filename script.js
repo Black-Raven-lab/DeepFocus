@@ -2332,11 +2332,11 @@ class NotificationManager {
       "long-break": "Long Break Done! 🌟",
     };
     const messages = {
-      pomodoro: "You&apos;ve completed a focus session. Ready for a break?",
+      pomodoro: "You completed a focus session. Ready for a break?",
       "short-break":
-        "Ready to dive back in? Click 'Got it' when you're ready to begin your next Pomodoro.",
+        "Ready to dive back in? Click “Got it” when you're ready to begin your next Pomodoro.",
       "long-break":
-        "Feeling refreshed? Click 'Got it' when you're ready to begin your next Pomodoro.",
+        "Feeling refreshed? Click “Got it” when you're ready to begin your next Pomodoro.",
     };
 
     document.getElementById("sessionCompleteTitle").textContent =
